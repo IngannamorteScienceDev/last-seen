@@ -5,6 +5,7 @@ from pathlib import Path
 from lastseen.logging import setup_logging
 from lastseen.parser import parse_dialog_folder
 from lastseen.exporter.json_export import export_messages_to_json
+from lastseen.downloader.media import download_media
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -31,6 +32,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-export",
         action="store_true",
         help="Parse dialog but do not export JSON file"
+    )
+
+    parser.add_argument(
+        "--no-media",
+        action="store_true",
+        help="Do not download media attachments"
     )
 
     verbosity = parser.add_mutually_exclusive_group()
@@ -67,8 +74,17 @@ def main() -> None:
     dialog_path: Path = args.input
     output_path: Path = args.output
 
+    # 1️⃣ Parse dialog
     messages = parse_dialog_folder(dialog_path)
 
+    # 2️⃣ Download media (optional)
+    if not args.no_media:
+        media_root = output_path.parent / "media"
+        download_media(messages, media_root)
+    else:
+        logging.info("Media download skipped (--no-media)")
+
+    # 3️⃣ Export JSON (optional)
     if args.no_export:
         logging.info("Export skipped (--no-export)")
         return
