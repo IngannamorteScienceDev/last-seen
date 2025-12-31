@@ -1,0 +1,17 @@
+[project]
+name = "last-seen"
+version = "0.1.0"
+description = "Offline mirror of VK dialogs built from the official data archive"
+authors = [{ name = "Arsenij Ingannamorte" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "beautifulsoup4",
+    "lxml",
+    "requests",
+    "tqdm"
+]
+
+[project.scripts]
+last-seen = "lastseen.cli:main"
