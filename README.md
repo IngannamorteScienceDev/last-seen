@@ -1,80 +1,64 @@
 # Last Seen
 
-**Last Seen** is a Python tool for creating a complete offline mirror of VKontakte dialogs using the official VK data archive.
-
-The project converts exported VK HTML message files into a normalized, machine-readable format and prepares them for offline viewing, media downloading, and analysis — without requiring VK API access or an internet connection.
-
----
-
-## ✨ Key Features
-
-- 📦 Works with the **official VK data archive**
-- 🧠 Parses **all message pages** in a dialog
-- 🗂 Normalizes message structure and attachments
-- 📊 Exports the full dialog into a single JSON file
-- 📈 Provides clean console logs and progress bars
-- 🔌 No VK API, no authentication, no internet required
+**Last Seen** is an offline VK dialog viewer that converts a downloaded VK message archive into a fully browsable local chat — with messages, media, search, and a clean UI.  
+No internet connection, no VK API, no authentication required.
 
 ---
 
-## 📥 Input Data
+## ✨ Features
 
-Last Seen expects a dialog folder from the official VK archive.
-
-Typical structure:
-
-```
-
-vk_archive/
-└── messages/
-└── <DIALOG_ID>/
-├── messages.html
-├── messages50.html
-├── messages100.html
-├── ...
-
-```
-
-Each `messages*.html` file contains up to 50 messages.
+- 📄 Parse VK HTML message archives into structured JSON
+- 🖼 Download and store media attachments locally (photos, voice messages)
+- 💬 Offline dialog viewer with chat-style layout
+- 👤 Message authors and timestamps
+- 📅 Grouping messages by day
+- 🔍 Instant client-side message search with highlighting
+- 🌙 Light / dark theme toggle (saved locally)
+- ⬇️ User-controlled autoscroll and jump-to-bottom
+- 🖥 Fully offline — works without internet access
 
 ---
 
-## 📤 Output Data
+## 🧠 How It Works
 
-After processing, Last Seen produces a normalized JSON file:
+1. You download your VK data archive
+2. Last Seen parses message HTML pages
+3. Attachments are downloaded and saved locally
+4. Messages are exported into a normalized JSON format
+5. A static HTML viewer displays the dialog offline
 
-```
+All processing happens **locally on your machine**.
 
-export/
-└── messages.json
+---
 
+## 📁 Project Structure
+
+```text
+last-seen/
+├── lastseen/          # Core package
+│   ├── cli.py         # Command-line interface
+│   ├── parser/        # VK HTML parsing logic
+│   ├── downloader/    # Media downloader
+│   └── exporter/      # JSON export
+├── viewer/            # Offline HTML viewer
+├── inspector/         # Archive inspection utilities
+├── tests/             # Tests
+├── samples/           # Example dialogs (optional)
+├── export/            # Generated output (JSON, media)
+├── requirements.txt
+└── README.md
 ````
 
-Each message contains:
-
-```json
-{
-  "id": 5762123,
-  "author": {
-    "role": "other",
-    "name": "User Name",
-    "vk_id": 123456789
-  },
-  "datetime": "2022-05-05T01:30:12",
-  "edited": false,
-  "text": "Message text",
-  "attachments": []
-}
-````
-
-Attachments are normalized using an internal taxonomy
-(photo, voice_message, sticker, link, forwarded_messages, etc.).
-
 ---
 
-## 🛠 Installation
+## 🚀 Installation
 
-Python **3.10+** is required.
+Clone the repository:
+
+```bash
+git clone https://github.com/<your-username>/last-seen.git
+cd last-seen
+```
 
 Install dependencies:
 
@@ -82,82 +66,124 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-or (if using `pyproject.toml`):
+---
+
+## ▶️ Usage
+
+### Parse a dialog and export messages
 
 ```bash
-pip install .
+python -m lastseen.cli -i samples/<DIALOG_ID>
 ```
 
----
-
-## 🚀 Usage
-
-Basic usage via CLI:
+### Skip media downloading
 
 ```bash
-python -m lastseen.cli
+python -m lastseen.cli -i samples/<DIALOG_ID> --no-media
 ```
 
-By default, the tool:
+### Open the viewer
 
-1. Parses all `messages*.html` files in a dialog folder
-2. Shows progress bars during parsing
-3. Exports the result to `export/messages.json`
+Start a local HTTP server:
 
----
+```bash
+python -m http.server 8000
+```
 
-## 📊 Console Output Example
+Then open in your browser:
 
 ```
-[INFO] Parsing dialog folder: samples/<DIALOG_ID>
-[INFO] Found 624 HTML pages
-Parsing message pages: 100%|██████████████| 624/624
-[INFO] Total messages parsed: 31160
-[INFO] Exporting 31160 messages to export/messages.json
-[INFO] Export completed successfully
+http://localhost:8000/viewer/index.html
 ```
 
 ---
 
-## 🧩 Project Structure
+## ⚙️ CLI Options
 
-```
-last-seen/
-├── lastseen/
-│   ├── attachments/     # Attachment taxonomy
-│   ├── parser/          # HTML parsing logic
-│   ├── downloader/      # Media downloader (planned)
-│   ├── exporter/        # JSON export
-│   ├── cli.py           # CLI entry point
-│   └── logging.py       # Logging setup
-├── inspector/           # Archive inspection tool
-├── tests/               # Parsing tests
-├── samples/             # Example VK archive data
-└── export/              # Generated output
-```
+| Flag            | Description            |
+| --------------- | ---------------------- |
+| `-i`, `--input` | Path to dialog folder  |
+| `--no-media`    | Skip media downloading |
 
 ---
 
-## 🧠 Design Principles
+## 🎛 Viewer Controls
 
-* **No guessing** — attachment types are derived from real archive inspection
-* **Separation of concerns** — parsing, exporting, downloading, viewing
-* **Deterministic output** — same input → same JSON
-* **Offline-first** — everything works without internet access
+* 🌙 Toggle light / dark theme
+* 🔍 Search messages by text
+* 📅 Messages grouped by day
+* ⬇️ Autoscroll toggle (open dialog at the end)
+* ⬇️⬇️ Double-click jump to last message
+
+All viewer preferences are stored locally in the browser.
 
 ---
 
-## 🚧 Project Status
+## 📎 Supported Attachments
 
-**Stable core pipeline implemented**
-(Current stage: CLI improvements and UX refinements)
+Last Seen supports detection and offline handling of the following attachment types:
 
-Planned next steps:
+* Photos
+* Voice messages
+* Videos (links)
+* Files
+* Stickers (metadata)
+* Forwarded messages
+* Wall posts
+* Playlists
+* Calls (metadata)
+* Stories (metadata)
 
-* CLI arguments (`--input`, `--output`, `--no-media`)
-* Media downloader (photos, voice messages)
-* Offline HTML viewer
-* Search and analytics utilities
+Attachment support depends on availability in the original VK archive.
+
+---
+
+## 🧠 Design Philosophy
+
+Last Seen is designed to be **local-first**, simple, and transparent.
+
+* No background services
+* No external APIs
+* No accounts or authentication
+* No hidden network activity
+
+Your data stays on your machine — always.
+
+---
+
+## 🔒 Privacy
+
+* No VK API usage
+* No authentication
+* No external requests (except local files)
+* No tracking or telemetry
+
+Last Seen is built for **personal archives and private analysis**.
+
+---
+
+## 🗺 Roadmap
+
+Possible future improvements (no guarantees):
+
+* Improved viewer performance for very large dialogs
+* Optional analytics and statistics
+* Additional export formats
+
+---
+
+## 🧪 Status
+
+Current version: **v0.3.0**
+
+The project is stable and fully usable.
+Future versions may extend the viewer UI or export formats.
+
+---
+
+## 📜 License
+
+MIT License
 
 ---
 
@@ -167,8 +193,9 @@ Planned next steps:
 
 ---
 
-## ⚠️ Disclaimer
+## ⭐ Why Last Seen?
 
-This project works only with data that the user has legally obtained from VKontakte via the official data export mechanism.
+Last Seen is not just a parser — it is a way to **revisit conversations as they were**, fully offline, without platforms, accounts, or servers.
 
-Last Seen does not bypass VK restrictions and does not access private data without user consent.
+A local memory.
+Nothing more. Nothing less.
