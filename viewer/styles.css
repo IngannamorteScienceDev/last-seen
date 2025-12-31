@@ -15,11 +15,31 @@ body {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 14px;
+}
+
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+}
+
+.message-wrapper.self {
+    align-self: flex-end;
+    text-align: right;
+}
+
+.message-wrapper.other {
+    align-self: flex-start;
+}
+
+.message-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
 }
 
 .message {
-    max-width: 70%;
     padding: 8px 12px;
     border-radius: 10px;
     line-height: 1.4;
@@ -27,13 +47,11 @@ body {
 }
 
 .message.self {
-    align-self: flex-end;
     background: #2563eb;
     color: white;
 }
 
 .message.other {
-    align-self: flex-start;
     background: white;
     color: #111827;
     border: 1px solid #e5e7eb;
