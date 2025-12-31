@@ -44,14 +44,14 @@ function setupTheme() {
 }
 
 /* =====================
-   Autoscroll
+   Autoscroll toggle
    ===================== */
 
 function setupAutoscroll() {
     const toggle = document.getElementById("scroll-toggle");
     const saved = localStorage.getItem("autoscroll");
 
-    let enabled = saved !== "false"; // default = true
+    let enabled = saved !== "false"; // default true
     toggle.textContent = enabled ? "⬇️" : "⬆️";
 
     toggle.addEventListener("click", () => {
@@ -68,7 +68,22 @@ function setupAutoscroll() {
 }
 
 /* =====================
-   Messages rendering
+   Jump to bottom (dblclick)
+   ===================== */
+
+function setupJumpToBottom() {
+    const button = document.getElementById("scroll-toggle");
+
+    button.addEventListener("dblclick", () => {
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth"
+        });
+    });
+}
+
+/* =====================
+   Messages
    ===================== */
 
 async function loadMessages() {
@@ -81,6 +96,8 @@ async function loadMessages() {
 
     const applyAutoscroll = setupAutoscroll();
     applyAutoscroll();
+
+    setupJumpToBottom();
 }
 
 function renderMessages(messages) {
@@ -93,10 +110,10 @@ function renderMessages(messages) {
         const currentDay = msg.datetime.split("T")[0];
 
         if (currentDay !== lastDay) {
-            const separator = document.createElement("div");
-            separator.className = "day-separator";
-            separator.textContent = formatDay(msg.datetime);
-            container.appendChild(separator);
+            const sep = document.createElement("div");
+            sep.className = "day-separator";
+            sep.textContent = formatDay(msg.datetime);
+            container.appendChild(sep);
             lastDay = currentDay;
         }
 
@@ -113,8 +130,8 @@ function renderMessages(messages) {
         bubble.textContent = msg.text || "";
 
         if (msg.attachments) {
-            const attBox = document.createElement("div");
-            attBox.className = "attachments";
+            const box = document.createElement("div");
+            box.className = "attachments";
 
             for (const att of msg.attachments) {
                 if (!att.local_path) continue;
@@ -123,19 +140,19 @@ function renderMessages(messages) {
                 if (att.type === "photo") {
                     const img = document.createElement("img");
                     img.src = path;
-                    attBox.appendChild(img);
+                    box.appendChild(img);
                 }
 
                 if (att.type === "voice_message") {
                     const audio = document.createElement("audio");
                     audio.controls = true;
                     audio.src = path;
-                    attBox.appendChild(audio);
+                    box.appendChild(audio);
                 }
             }
 
-            if (attBox.children.length > 0) {
-                bubble.appendChild(attBox);
+            if (box.children.length > 0) {
+                bubble.appendChild(box);
             }
         }
 
