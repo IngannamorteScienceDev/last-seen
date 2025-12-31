@@ -100,17 +100,16 @@ def normalize_attachment(label: str, href: Optional[str]) -> Dict:
 # -------------------------
 
 def parse_messages_page(path: Path) -> List[Dict]:
-    logger.info(f"Parsing page: {path.name}")
-
+    """
+    Parse a single messages*.html page.
+    IMPORTANT: no logging here to avoid breaking tqdm.
+    """
     with open(path, encoding="windows-1251", errors="ignore") as f:
         soup = BeautifulSoup(f, "lxml")
 
     messages: List[Dict] = []
-    raw_messages = soup.select("div.message")
 
-    logger.info(f"Found {len(raw_messages)} messages")
-
-    for msg in raw_messages:
+    for msg in soup.select("div.message"):
         msg_id = int(msg.get("data-id"))
 
         header = msg.select_one("div.message__header")
@@ -176,6 +175,10 @@ def parse_messages_page(path: Path) -> List[Dict]:
 
 
 def parse_dialog_folder(folder_path: Path) -> List[Dict]:
+    """
+    Parse all messages*.html files in dialog folder.
+    tqdm is used ONLY here.
+    """
     logger.info(f"Parsing dialog folder: {folder_path}")
 
     html_files = sorted(folder_path.glob("messages*.html"))
@@ -183,10 +186,14 @@ def parse_dialog_folder(folder_path: Path) -> List[Dict]:
 
     all_messages: List[Dict] = []
 
-    for html_file in tqdm(html_files, desc="Parsing message pages", unit="page"):
+    for html_file in tqdm(
+        html_files,
+        desc="Parsing message pages",
+        unit="page"
+    ):
         all_messages.extend(parse_messages_page(html_file))
 
+    all_messages.sort(key=lambda m: m["datetime"])
     logger.info(f"Total messages parsed: {len(all_messages)}")
 
-    all_messages.sort(key=lambda m: m["datetime"])
     return all_messages
