@@ -9,6 +9,15 @@ function formatDateTime(isoString) {
     });
 }
 
+function formatDay(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+}
+
 async function loadMessages() {
     const response = await fetch("../export/messages.json");
     const messages = await response.json();
@@ -18,7 +27,20 @@ async function loadMessages() {
 function renderMessages(messages) {
     const container = document.getElementById("messages");
 
+    let lastDay = null;
+
     for (const msg of messages) {
+        const currentDay = msg.datetime.split("T")[0];
+
+        // Day separator
+        if (currentDay !== lastDay) {
+            const separator = document.createElement("div");
+            separator.className = "day-separator";
+            separator.textContent = formatDay(msg.datetime);
+            container.appendChild(separator);
+            lastDay = currentDay;
+        }
+
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
         wrapper.classList.add(msg.author.role === "self" ? "self" : "other");
