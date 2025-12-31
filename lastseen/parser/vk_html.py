@@ -195,3 +195,27 @@ def parse_messages_page(path: Path) -> List[Dict]:
         })
 
     return messages
+
+def parse_dialog_folder(folder_path: Path) -> list[dict]:
+    """
+    Parse all messages*.html files in a dialog folder
+    and return a single list of messages.
+    """
+    if not folder_path.exists() or not folder_path.is_dir():
+        raise ValueError(f"Dialog folder does not exist: {folder_path}")
+
+    html_files = sorted(folder_path.glob("messages*.html"))
+    if not html_files:
+        raise ValueError(f"No messages*.html files found in {folder_path}")
+
+    all_messages: list[dict] = []
+
+    for html_file in html_files:
+        page_messages = parse_messages_page(html_file)
+        all_messages.extend(page_messages)
+
+    # Sort messages by datetime (oldest -> newest)
+    all_messages.sort(key=lambda m: m["datetime"])
+
+    return all_messages
+
