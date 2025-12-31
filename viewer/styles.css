@@ -1,17 +1,68 @@
+/* =====================
+   Theme variables
+   ===================== */
+
+:root {
+    --bg: #f3f4f6;
+    --header-bg: #1f2937;
+    --header-text: #ffffff;
+    --bubble-self: #2563eb;
+    --bubble-other: #ffffff;
+    --bubble-other-text: #111827;
+    --border: #e5e7eb;
+    --meta: #6b7280;
+    --search-bg: #ffffff;
+    --search-text: #111827;
+    --mark: #fde047;
+}
+
+body.dark {
+    --bg: #0f172a;
+    --header-bg: #020617;
+    --header-text: #e5e7eb;
+    --bubble-self: #1d4ed8;
+    --bubble-other: #020617;
+    --bubble-other-text: #e5e7eb;
+    --border: #1e293b;
+    --meta: #94a3b8;
+    --search-bg: #020617;
+    --search-text: #e5e7eb;
+    --mark: #facc15;
+}
+
+/* =====================
+   Base
+   ===================== */
+
 body {
     margin: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f3f4f6;
+    background: var(--bg);
+    transition: background 0.2s;
 }
 
 #header {
     padding: 12px 16px;
-    background: #1f2937;
-    color: white;
-    font-weight: 600;
+    background: var(--header-bg);
+    color: var(--header-text);
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+#theme-toggle {
+    background: none;
+    border: none;
+    color: var(--header-text);
+    font-size: 18px;
+    cursor: pointer;
 }
 
 #search {
@@ -19,7 +70,13 @@ body {
     border-radius: 6px;
     border: none;
     font-size: 14px;
+    background: var(--search-bg);
+    color: var(--search-text);
 }
+
+/* =====================
+   Messages
+   ===================== */
 
 #messages {
     padding: 16px;
@@ -31,7 +88,7 @@ body {
 .day-separator {
     align-self: center;
     font-size: 13px;
-    color: #6b7280;
+    color: var(--meta);
     margin: 16px 0 8px;
 }
 
@@ -52,7 +109,7 @@ body {
 
 .message-meta {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--meta);
     margin-bottom: 4px;
 }
 
@@ -64,18 +121,18 @@ body {
 }
 
 .message.self {
-    background: #2563eb;
+    background: var(--bubble-self);
     color: white;
 }
 
 .message.other {
-    background: white;
-    color: #111827;
-    border: 1px solid #e5e7eb;
+    background: var(--bubble-other);
+    color: var(--bubble-other-text);
+    border: 1px solid var(--border);
 }
 
 .message mark {
-    background: #fde047;
+    background: var(--mark);
     padding: 0 2px;
     border-radius: 2px;
 }

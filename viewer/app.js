@@ -18,11 +18,37 @@ function formatDay(isoString) {
     });
 }
 
+/* =====================
+   Theme
+   ===================== */
+
+function setupTheme() {
+    const toggle = document.getElementById("theme-toggle");
+    const saved = localStorage.getItem("theme");
+
+    if (saved === "dark") {
+        document.body.classList.add("dark");
+        toggle.textContent = "☀";
+    }
+
+    toggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        const isDark = document.body.classList.contains("dark");
+        toggle.textContent = isDark ? "☀" : "🌙";
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+}
+
+/* =====================
+   Messages
+   ===================== */
+
 async function loadMessages() {
     const response = await fetch("../export/messages.json");
     const messages = await response.json();
     renderMessages(messages);
     setupSearch();
+    setupTheme();
 }
 
 function renderMessages(messages) {
@@ -45,7 +71,6 @@ function renderMessages(messages) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
         wrapper.classList.add(msg.author.role === "self" ? "self" : "other");
-
         wrapper.dataset.text = (msg.text || "").toLowerCase();
 
         const meta = document.createElement("div");
@@ -89,6 +114,10 @@ function renderMessages(messages) {
     }
 }
 
+/* =====================
+   Search
+   ===================== */
+
 function setupSearch() {
     const input = document.getElementById("search");
     const messages = document.querySelectorAll(".message-wrapper");
@@ -108,12 +137,8 @@ function setupSearch() {
 
             if (text.includes(query)) {
                 wrapper.style.display = "";
-
                 const regex = new RegExp(`(${query})`, "gi");
-                bubble.innerHTML = bubble.textContent.replace(
-                    regex,
-                    "<mark>$1</mark>"
-                );
+                bubble.innerHTML = bubble.textContent.replace(regex, "<mark>$1</mark>");
             } else {
                 wrapper.style.display = "none";
             }
