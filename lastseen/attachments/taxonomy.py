@@ -5,7 +5,6 @@ This module defines normalized attachment types
 based on real VK archive inspection.
 """
 
-
 from dataclasses import dataclass
 
 

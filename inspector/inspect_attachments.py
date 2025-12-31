@@ -10,11 +10,6 @@ Purpose:
 - Collect statistics about attachments
 - Detect which attachments contain downloadable links
 
-What it does NOT do:
-- Does not download anything
-- Does not modify files
-- Does not build final JSON structures
-
 Usage:
     python inspector/inspect_attachments.py <path_to_dialog_folder>
 
@@ -30,10 +25,6 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 
-# -----------------------------
-# Utility functions
-# -----------------------------
-
 def find_html_files(dialog_path: Path) -> list[Path]:
     """Return all messages*.html files sorted by name."""
     return sorted(dialog_path.glob("messages*.html"))
@@ -45,17 +36,12 @@ def open_html(path: Path) -> BeautifulSoup:
         return BeautifulSoup(f, "lxml")
 
 
-# -----------------------------
-# Main inspection logic
-# -----------------------------
-
 def inspect_dialog(dialog_path: Path) -> None:
     if not dialog_path.exists() or not dialog_path.is_dir():
         print(f"[ERROR] Path does not exist or is not a directory: {dialog_path}")
         sys.exit(1)
 
     html_files = find_html_files(dialog_path)
-
     if not html_files:
         print("[ERROR] No messages*.html files found")
         sys.exit(1)
@@ -87,21 +73,13 @@ def inspect_dialog(dialog_path: Path) -> None:
                 total_attachments += 1
 
                 desc_tag = att.select_one("div.attachment__description")
-                if not desc_tag:
-                    att_type = "UNKNOWN"
-                else:
-                    att_type = desc_tag.get_text(strip=True)
-
+                att_type = desc_tag.get_text(strip=True) if desc_tag else "UNKNOWN"
                 attachment_stats[att_type] += 1
 
                 link = att.select_one("a.attachment__link")
                 if link and link.get("href"):
                     attachment_with_link[att_type] += 1
                     attachment_examples[att_type].add(link["href"])
-
-    # -----------------------------
-    # Final report
-    # -----------------------------
 
     print("\n" + "=" * 60)
     print("ARCHIVE INSPECTION REPORT")
@@ -130,13 +108,9 @@ def inspect_dialog(dialog_path: Path) -> None:
     print("\n[INFO] Inspection completed successfully.")
 
 
-# -----------------------------
-# Entry point
-# -----------------------------
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python inspect_attachments.py <dialog_folder>")
+        print("Usage: python inspector/inspect_attachments.py <dialog_folder>")
         sys.exit(1)
 
     dialog_dir = Path(sys.argv[1])
