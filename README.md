@@ -183,7 +183,12 @@ Future versions may extend the viewer UI or export formats.
 
 ## 📜 License
 
-MIT License
+This project is licensed under a **Personal Use License**.
+
+You are allowed to use the software for personal purposes,
+but copying, modifying, or reusing the source code is not permitted.
+
+See the `LICENSE` file for full terms.
 
 ---
 
