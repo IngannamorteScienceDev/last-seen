@@ -1,3 +1,7 @@
+/* =====================
+   Date helpers
+   ===================== */
+
 function formatDateTime(isoString) {
     const date = new Date(isoString);
     return date.toLocaleString(undefined, {
@@ -40,15 +44,43 @@ function setupTheme() {
 }
 
 /* =====================
-   Messages
+   Autoscroll
+   ===================== */
+
+function setupAutoscroll() {
+    const toggle = document.getElementById("scroll-toggle");
+    const saved = localStorage.getItem("autoscroll");
+
+    let enabled = saved !== "false"; // default = true
+    toggle.textContent = enabled ? "⬇️" : "⬆️";
+
+    toggle.addEventListener("click", () => {
+        enabled = !enabled;
+        localStorage.setItem("autoscroll", enabled ? "true" : "false");
+        toggle.textContent = enabled ? "⬇️" : "⬆️";
+    });
+
+    return () => {
+        if (enabled) {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    };
+}
+
+/* =====================
+   Messages rendering
    ===================== */
 
 async function loadMessages() {
     const response = await fetch("../export/messages.json");
     const messages = await response.json();
+
     renderMessages(messages);
     setupSearch();
     setupTheme();
+
+    const applyAutoscroll = setupAutoscroll();
+    applyAutoscroll();
 }
 
 function renderMessages(messages) {
@@ -69,8 +101,7 @@ function renderMessages(messages) {
         }
 
         const wrapper = document.createElement("div");
-        wrapper.classList.add("message-wrapper");
-        wrapper.classList.add(msg.author.role === "self" ? "self" : "other");
+        wrapper.classList.add("message-wrapper", msg.author.role);
         wrapper.dataset.text = (msg.text || "").toLowerCase();
 
         const meta = document.createElement("div");
@@ -78,17 +109,15 @@ function renderMessages(messages) {
         meta.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
 
         const bubble = document.createElement("div");
-        bubble.classList.add("message");
-        bubble.classList.add(msg.author.role === "self" ? "self" : "other");
+        bubble.classList.add("message", msg.author.role);
         bubble.textContent = msg.text || "";
 
-        if (msg.attachments && msg.attachments.length > 0) {
+        if (msg.attachments) {
             const attBox = document.createElement("div");
             attBox.className = "attachments";
 
             for (const att of msg.attachments) {
                 if (!att.local_path) continue;
-
                 const path = "../" + att.local_path.replace("\\", "/");
 
                 if (att.type === "photo") {
@@ -105,7 +134,9 @@ function renderMessages(messages) {
                 }
             }
 
-            bubble.appendChild(attBox);
+            if (attBox.children.length > 0) {
+                bubble.appendChild(attBox);
+            }
         }
 
         wrapper.appendChild(meta);
@@ -120,12 +151,12 @@ function renderMessages(messages) {
 
 function setupSearch() {
     const input = document.getElementById("search");
-    const messages = document.querySelectorAll(".message-wrapper");
 
     input.addEventListener("input", () => {
         const query = input.value.trim().toLowerCase();
+        const wrappers = document.querySelectorAll(".message-wrapper");
 
-        messages.forEach(wrapper => {
+        wrappers.forEach(wrapper => {
             const text = wrapper.dataset.text;
             const bubble = wrapper.querySelector(".message");
 
