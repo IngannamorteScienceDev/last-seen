@@ -22,17 +22,18 @@ async function loadMessages() {
     const response = await fetch("../export/messages.json");
     const messages = await response.json();
     renderMessages(messages);
+    setupSearch();
 }
 
 function renderMessages(messages) {
     const container = document.getElementById("messages");
+    container.innerHTML = "";
 
     let lastDay = null;
 
     for (const msg of messages) {
         const currentDay = msg.datetime.split("T")[0];
 
-        // Day separator
         if (currentDay !== lastDay) {
             const separator = document.createElement("div");
             separator.className = "day-separator";
@@ -45,18 +46,17 @@ function renderMessages(messages) {
         wrapper.classList.add("message-wrapper");
         wrapper.classList.add(msg.author.role === "self" ? "self" : "other");
 
-        // Meta (author + time)
+        wrapper.dataset.text = (msg.text || "").toLowerCase();
+
         const meta = document.createElement("div");
         meta.className = "message-meta";
         meta.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
 
-        // Message bubble
         const bubble = document.createElement("div");
         bubble.classList.add("message");
         bubble.classList.add(msg.author.role === "self" ? "self" : "other");
         bubble.textContent = msg.text || "";
 
-        // Attachments
         if (msg.attachments && msg.attachments.length > 0) {
             const attBox = document.createElement("div");
             attBox.className = "attachments";
@@ -87,6 +87,38 @@ function renderMessages(messages) {
         wrapper.appendChild(bubble);
         container.appendChild(wrapper);
     }
+}
+
+function setupSearch() {
+    const input = document.getElementById("search");
+    const messages = document.querySelectorAll(".message-wrapper");
+
+    input.addEventListener("input", () => {
+        const query = input.value.trim().toLowerCase();
+
+        messages.forEach(wrapper => {
+            const text = wrapper.dataset.text;
+            const bubble = wrapper.querySelector(".message");
+
+            if (!query) {
+                wrapper.style.display = "";
+                bubble.innerHTML = bubble.textContent;
+                return;
+            }
+
+            if (text.includes(query)) {
+                wrapper.style.display = "";
+
+                const regex = new RegExp(`(${query})`, "gi");
+                bubble.innerHTML = bubble.textContent.replace(
+                    regex,
+                    "<mark>$1</mark>"
+                );
+            } else {
+                wrapper.style.display = "none";
+            }
+        });
+    });
 }
 
 loadMessages();
