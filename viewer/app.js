@@ -1,20 +1,17 @@
 /* =====================
-   State
+   STATE
    ===================== */
 
 let meta = null;
 let currentPage = null;
 
 /* =====================
-   Helpers
+   HELPERS
    ===================== */
 
 function formatDateTime(iso) {
     const d = new Date(iso);
     return d.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
         hour: "2-digit",
         minute: "2-digit"
     });
@@ -30,7 +27,7 @@ function formatDay(iso) {
 }
 
 /* =====================
-   Theme
+   THEME
    ===================== */
 
 function setupTheme() {
@@ -51,7 +48,7 @@ function setupTheme() {
 }
 
 /* =====================
-   Data loading
+   DATA LOADING
    ===================== */
 
 async function loadMeta() {
@@ -60,12 +57,14 @@ async function loadMeta() {
 }
 
 async function loadPage(pageIndex) {
-    const res = await fetch(`../export/pages/page_${String(pageIndex).padStart(3, "0")}.json`);
+    const res = await fetch(
+        `../export/pages/page_${String(pageIndex).padStart(3, "0")}.json`
+    );
     return await res.json();
 }
 
 /* =====================
-   Rendering
+   RENDERING
    ===================== */
 
 function renderMessages(messages) {
@@ -78,26 +77,31 @@ function renderMessages(messages) {
         const day = msg.datetime.split("T")[0];
 
         if (day !== lastDay) {
-            const sep = document.createElement("div");
-            sep.className = "day-separator";
-            sep.textContent = formatDay(msg.datetime);
-            container.appendChild(sep);
+            const time = document.createElement("div");
+            time.className = "time";
+            time.textContent = formatDay(msg.datetime);
+            container.appendChild(time);
             lastDay = day;
         }
 
-        const wrap = document.createElement("div");
-        wrap.classList.add("message-wrapper", msg.author.role);
-        wrap.dataset.text = (msg.text || "").toLowerCase();
-
-        const metaDiv = document.createElement("div");
-        metaDiv.className = "message-meta";
-        metaDiv.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
-
         const bubble = document.createElement("div");
-        bubble.classList.add("message", msg.author.role);
-        bubble.textContent = msg.text || "";
+        bubble.className = `message ${msg.author.role}`;
 
-        if (msg.attachments) {
+        // META (author + time)
+        const meta = document.createElement("div");
+        meta.className = "message-meta";
+        meta.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
+        bubble.appendChild(meta);
+
+        // TEXT
+        if (msg.text) {
+            const text = document.createElement("div");
+            text.textContent = msg.text;
+            bubble.appendChild(text);
+        }
+
+        // ATTACHMENTS
+        if (msg.attachments && msg.attachments.length > 0) {
             const box = document.createElement("div");
             box.className = "attachments";
 
@@ -119,12 +123,12 @@ function renderMessages(messages) {
                 }
             }
 
-            if (box.children.length > 0) bubble.appendChild(box);
+            if (box.children.length > 0) {
+                bubble.appendChild(box);
+            }
         }
 
-        wrap.appendChild(metaDiv);
-        wrap.appendChild(bubble);
-        container.appendChild(wrap);
+        container.appendChild(bubble);
     }
 }
 
@@ -132,15 +136,18 @@ function updatePagination() {
     document.getElementById("page-label").textContent =
         `Page ${meta.total_pages - currentPage} / ${meta.total_pages}`;
 
-    document.getElementById("prev-page").disabled = (currentPage === meta.total_pages - 1);
-    document.getElementById("next-page").disabled = (currentPage === 0);
+    document.getElementById("prev-page").disabled =
+        currentPage === meta.total_pages - 1;
+
+    document.getElementById("next-page").disabled =
+        currentPage === 0;
 }
 
 /* =====================
-   Controls
+   CONTROLS
    ===================== */
 
-function setupControls() {
+function setupPagination() {
     document.getElementById("prev-page").onclick = async () => {
         if (currentPage < meta.total_pages - 1) {
             currentPage++;
@@ -162,13 +169,12 @@ async function showPage(pageIndex) {
     renderMessages(page.messages);
     updatePagination();
 
-    // reset search
     const search = document.getElementById("search");
     if (search) search.value = "";
 }
 
 /* =====================
-   Search (current page only)
+   SEARCH (CURRENT PAGE)
    ===================== */
 
 function setupSearch() {
@@ -176,38 +182,28 @@ function setupSearch() {
 
     input.addEventListener("input", () => {
         const q = input.value.trim().toLowerCase();
-        const wrappers = document.querySelectorAll(".message-wrapper");
+        const bubbles = document.querySelectorAll(".message");
 
-        wrappers.forEach(wrap => {
-            const text = wrap.dataset.text || "";
-            const bubble = wrap.querySelector(".message");
-
-            if (!q) {
-                wrap.style.display = "";
-                bubble.innerHTML = bubble.textContent;
-            } else if (text.includes(q)) {
-                wrap.style.display = "";
-                const re = new RegExp(`(${q})`, "gi");
-                bubble.innerHTML = bubble.textContent.replace(re, "<mark>$1</mark>");
-            } else {
-                wrap.style.display = "none";
-            }
+        bubbles.forEach(bubble => {
+            const text = bubble.textContent.toLowerCase();
+            bubble.style.display =
+                !q || text.includes(q) ? "" : "none";
         });
     });
 }
 
 /* =====================
-   Init
+   INIT
    ===================== */
 
 async function init() {
     await loadMeta();
 
     setupTheme();
-    setupControls();
+    setupPagination();
     setupSearch();
 
-    // start from LAST page (latest messages)
+    // Start from LAST page (latest messages)
     const lastPage = meta.total_pages - 1;
     await showPage(lastPage);
 }

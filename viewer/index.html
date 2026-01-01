@@ -8,26 +8,36 @@
 <body>
 
 <div id="app">
+    <div class="chat">
 
-    <div id="header">
-        <div class="header-top">
-            <div class="title">Last Seen — Offline Dialog</div>
-            <div class="controls">
-                <button id="theme-toggle" title="Toggle theme">🌙</button>
+        <!-- HEADER / CONTACT BAR -->
+        <div class="contact bar">
+            <div class="contact-info">
+                <div class="contact-avatar"></div>
+                <div>
+                    <div class="contact-name" id="contact-name">Dialog</div>
+                    <div class="contact-status">Offline archive</div>
+                </div>
             </div>
+            <button id="theme-toggle" title="Toggle theme">🌙</button>
         </div>
 
-        <input id="search" type="text" placeholder="Search messages (current page)…">
+        <!-- PAGINATION -->
+        <div class="pagination">
+            <button id="prev-page">← Newer</button>
+            <span id="page-label"></span>
+            <button id="next-page">Older →</button>
+        </div>
+
+        <!-- SEARCH -->
+        <div style="padding: 0 12px;">
+            <input id="search" type="text" placeholder="Search messages on this page…">
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="messages" id="messages"></div>
+
     </div>
-
-    <div class="pagination">
-        <button id="prev-page" title="Newer messages">← Newer</button>
-        <span id="page-label"></span>
-        <button id="next-page" title="Older messages">Older →</button>
-    </div>
-
-    <div id="messages"></div>
-
 </div>
 
 <script src="app.js"></script>
