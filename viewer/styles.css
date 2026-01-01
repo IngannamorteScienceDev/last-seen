@@ -11,8 +11,8 @@
     --text-main: #050505;
     --text-muted: #65676b;
 
-    /* NEW primary (self) color */
-    --bubble-self: #4f6ef7;
+    /* Reference-style dark bubble for self */
+    --bubble-self: #2b2e33;
     --bubble-self-text: #ffffff;
 
     --bubble-other: #f0f0f0;
@@ -22,7 +22,7 @@
 
     --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.08);
     --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.08);
-    --shadow-bubble-self: 0 4px 12px rgba(79, 110, 247, 0.35);
+    --shadow-bubble-self: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 body.dark {
@@ -34,8 +34,9 @@ body.dark {
     --text-main: #e4e6eb;
     --text-muted: #b0b3b8;
 
-    --bubble-self: #4f6ef7;
+    --bubble-self: #2b2e33;
     --bubble-self-text: #ffffff;
+
     --bubble-other: #3a3b3c;
 
     --time-bg: #3a3b3c;
@@ -43,7 +44,7 @@ body.dark {
 
     --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.5);
     --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.4);
-    --shadow-bubble-self: 0 4px 14px rgba(79, 110, 247, 0.45);
+    --shadow-bubble-self: 0 4px 14px rgba(0, 0, 0, 0.6);
 }
 
 /* =====================
@@ -156,12 +157,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    animation: fadeIn 0.25s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
 }
 
 /* =====================
@@ -183,12 +178,17 @@ body {
    ===================== */
 
 .message {
-    max-width: 72%;
+    width: 420px;              /* FIXED WIDTH */
+    max-width: 100%;
     padding: 10px 14px;
     line-height: 1.45;
+
     background: var(--bubble-other);
     color: var(--text-main);
     box-shadow: var(--shadow-bubble);
+
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* Self */
@@ -199,7 +199,7 @@ body {
     box-shadow: var(--shadow-bubble-self);
 }
 
-/* Bubble shapes (grouped) */
+/* Grouped shapes */
 .message.start {
     border-radius: 18px 18px 18px 6px;
 }
@@ -210,7 +210,7 @@ body {
     border-radius: 18px 6px 6px 18px;
 }
 
-/* Self variants */
+/* Self grouped */
 .message.self.start {
     border-radius: 18px 18px 6px 18px;
 }
@@ -240,7 +240,17 @@ body {
 }
 
 .attachments img {
-    max-width: 360px;
+    max-width: 100%;
     border-radius: 12px;
     box-shadow: var(--shadow-bubble);
+}
+
+/* =====================
+   MOBILE
+   ===================== */
+
+@media (max-width: 768px) {
+    .message {
+        width: 100%;
+    }
 }
