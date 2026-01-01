@@ -1,98 +1,91 @@
+"""
+Last Seen — Media Downloader
+----------------------------
+Handles downloading media attachments from parsed messages.
+
+Public API:
+- download_dialog_media(messages, out_dir)
+"""
+
 from __future__ import annotations
 
-import logging
+import os
 import hashlib
+import requests
 from pathlib import Path
-from typing import Iterable, Dict
+from typing import List, Dict, Any
 from urllib.parse import urlparse
 
-import requests
 from tqdm import tqdm
 
-logger = logging.getLogger(__name__)
 
-TIMEOUT = 15
-
-
-def _hash_url(url: str) -> str:
-    return hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
-
-
-def _get_extension(url: str) -> str:
+def _safe_filename(url: str) -> str:
     parsed = urlparse(url)
-    suffix = Path(parsed.path).suffix
-    return suffix if suffix else ""
+    name = os.path.basename(parsed.path)
+    if not name:
+        name = hashlib.md5(url.encode()).hexdigest()
+    return name
 
 
-def _target_subdir(att_type: str) -> str:
-    if att_type == "photo":
-        return "photo"
-    if att_type == "voice_message":
-        return "voice"
-    return "files"
+def _download_file(url: str, target: Path) -> bool:
+    try:
+        r = requests.get(url, stream=True, timeout=15)
+        r.raise_for_status()
+        with open(target, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        return True
+    except Exception:
+        return False
 
 
-def download_media(
-    messages: Iterable[Dict],
-    media_root: Path,
+def download_dialog_media(
+    messages: List[Dict[str, Any]],
+    out_dir: str | Path = "export",
 ) -> int:
     """
-    Download all downloadable attachments from messages.
-    Updates attachments in-place with local_path.
-    """
-    media_root.mkdir(parents=True, exist_ok=True)
+    Download all media attachments referenced in messages.
 
-    attachments = []
+    Adds local_path to attachment entries if downloaded.
+
+    Returns:
+        number of successfully downloaded files
+    """
+    out_dir = Path(out_dir)
+    media_dir = out_dir / "media"
+    media_dir.mkdir(parents=True, exist_ok=True)
+
+    tasks = []
+
     for msg in messages:
         for att in msg.get("attachments", []):
-            if att.get("downloadable") and att.get("source_url"):
-                attachments.append(att)
+            url = att.get("url")
+            if not url:
+                continue
+            filename = _safe_filename(url)
+            target = media_dir / filename
+            tasks.append((url, target, att))
 
-    if not attachments:
-        logger.info("No downloadable attachments found")
+    if not tasks:
+        print("[INFO] No media attachments found")
         return 0
-
-    logger.info(f"Downloading {len(attachments)} attachments")
 
     downloaded = 0
 
-    for att in tqdm(attachments, desc="Downloading media", unit="file"):
-        url = att["source_url"]
-        att_type = att["type"]
-
-        subdir = _target_subdir(att_type)
-        target_dir = media_root / subdir
-        target_dir.mkdir(parents=True, exist_ok=True)
-
-        file_hash = _hash_url(url)
-        ext = _get_extension(url)
-        target_path = target_dir / f"{file_hash}{ext}"
-
-        # Skip if already downloaded
-        if target_path.exists():
-            att["local_path"] = str(target_path)
+    for url, target, att in tqdm(
+        tasks,
+        desc="Downloading media",
+        unit="file",
+        dynamic_ncols=True,
+    ):
+        if target.exists():
+            att["local_path"] = str(target)
             continue
 
-        try:
-            response = requests.get(url, timeout=TIMEOUT)
-            response.raise_for_status()
-
-            with open(target_path, "wb") as f:
-                f.write(response.content)
-
-            att["local_path"] = str(target_path)
+        if _download_file(url, target):
+            att["local_path"] = str(target)
             downloaded += 1
 
-        except Exception as e:
-            logger.warning(f"Failed to download {url}: {e}")
-
-    logger.info(f"Downloaded {downloaded} new files")
+    print(f"[INFO] Downloaded {downloaded} new files")
     return downloaded
-
-def download_attachments(attachments, output_dir):
-    """
-    Compatibility wrapper for CLI.
-    Expects a list of attachment dicts with `url` or `download_url`.
-    Returns number of downloaded files.
-    """
-    return download_media(attachments, output_dir)
