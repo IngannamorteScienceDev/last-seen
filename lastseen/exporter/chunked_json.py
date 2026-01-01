@@ -1,65 +1,63 @@
-from pathlib import Path
 import json
-from datetime import datetime
-from typing import List, Dict
+from pathlib import Path
+from math import ceil
 
+PAGE_SIZE = 100
 
-def export_chunked_dialog(
-    messages: List[Dict],
-    output_dir: Path,
-    page_size: int = 100,
-):
-    """
-    Export dialog messages into chunked JSON pages.
-
-    Resulting structure:
-
-    export/
-    ├── meta.json
-    └── pages/
-        ├── page_000.json
-        ├── page_001.json
-        ├── page_002.json
-        └── ...
-    """
-
-    output_dir = Path(output_dir)
-    pages_dir = output_dir / "pages"
-    pages_dir.mkdir(parents=True, exist_ok=True)
+def export_chunked(messages, export_dir: Path):
+    export_dir.mkdir(parents=True, exist_ok=True)
+    pages_dir = export_dir / "pages"
+    pages_dir.mkdir(exist_ok=True)
 
     total_messages = len(messages)
-    total_pages = (total_messages + page_size - 1) // page_size
+    total_pages = ceil(total_messages / PAGE_SIZE)
 
-    print(f"[INFO] Chunking {total_messages} messages into {total_pages} pages")
+    date_index = {}
 
-    # --- write pages ---
-    for page_index in range(total_pages):
-        start = page_index * page_size
-        end = start + page_size
-        page_messages = messages[start:end]
+    for global_idx, msg in enumerate(messages):
+        date = msg["datetime"].split("T")[0]
 
-        page_data = {
-            "page": page_index,
-            "messages": page_messages,
-        }
+        if date not in date_index:
+            page = global_idx // PAGE_SIZE
+            offset = global_idx % PAGE_SIZE
+            date_index[date] = {
+                "page": page,
+                "offset": offset
+            }
 
-        page_path = pages_dir / f"page_{page_index:03d}.json"
-        with page_path.open("w", encoding="utf-8") as f:
-            json.dump(page_data, f, ensure_ascii=False, indent=2)
+    # write pages
+    for page in range(total_pages):
+        chunk = messages[
+            page * PAGE_SIZE:(page + 1) * PAGE_SIZE
+        ]
+        with open(pages_dir / f"page_{page:03d}.json", "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "page": page,
+                    "messages": chunk
+                },
+                f,
+                ensure_ascii=False,
+                indent=2
+            )
 
-    # --- write meta ---
+    # meta.json
     meta = {
-        "total_messages": total_messages,
-        "page_size": page_size,
         "total_pages": total_pages,
-        "order": "oldest_to_newest",
-        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "total_messages": total_messages,
+        "page_size": PAGE_SIZE,
+        "date_range": {
+            "from": messages[0]["datetime"].split("T")[0],
+            "to": messages[-1]["datetime"].split("T")[0],
+        }
     }
 
-    meta_path = output_dir / "meta.json"
-    with meta_path.open("w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
+    with open(export_dir / "meta.json", "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
 
-    print(f"[INFO] Export completed")
-    print(f"[INFO] Meta file: {meta_path}")
-    print(f"[INFO] Pages directory: {pages_dir}")
+    with open(export_dir / "date_index.json", "w", encoding="utf-8") as f:
+        json.dump(date_index, f, indent=2)
+
+    print(f"[INFO] Exported {total_messages} messages")
+    print(f"[INFO] Pages: {total_pages}")
+    print(f"[INFO] Date index entries: {len(date_index)}")
