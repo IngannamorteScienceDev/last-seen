@@ -3,8 +3,10 @@
    ===================== */
 
 let allMessages = [];
-let pageSize = 100;
-let currentPage = 0;
+const pageSize = 100;
+
+// pageIndex = 0 means "latest page"
+let pageIndex = 0;
 let totalPages = 0;
 
 /* =====================
@@ -53,36 +55,43 @@ function setupTheme() {
 }
 
 /* =====================
-   Pagination
+   Pagination core (from last to first)
    ===================== */
 
-function setupPagination() {
-    document.getElementById("prev-page").onclick = () => {
-        if (currentPage > 0) {
-            currentPage--;
-            renderPage();
-        }
-    };
+function getPageSlice() {
+    // We assume allMessages is chronological: oldest -> newest
+    // pageIndex=0 -> last chunk (newest)
+    const total = allMessages.length;
 
-    document.getElementById("next-page").onclick = () => {
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            renderPage();
-        }
-    };
+    const end = total - (pageIndex * pageSize);
+    const start = Math.max(0, end - pageSize);
+
+    return allMessages.slice(start, end);
 }
 
 function updatePageLabel() {
-    document.getElementById("page-label").textContent =
-        `Page ${currentPage + 1} / ${totalPages}`;
+    // Display pages as 1..N where 1 is the latest
+    const current = pageIndex + 1;
+    document.getElementById("page-label").textContent = `Page ${current} / ${totalPages}`;
+}
+
+function updateButtons() {
+    const prevBtn = document.getElementById("prev-page"); // newer
+    const nextBtn = document.getElementById("next-page"); // older
+
+    prevBtn.disabled = (pageIndex === 0);
+    nextBtn.disabled = (pageIndex === totalPages - 1);
 }
 
 function renderPage() {
-    const start = currentPage * pageSize;
-    const end = start + pageSize;
-    renderMessages(allMessages.slice(start, end));
+    const slice = getPageSlice();
+    renderMessages(slice);
     updatePageLabel();
-    window.scrollTo(0, document.body.scrollHeight);
+    updateButtons();
+
+    // Reset search input when switching pages (safer UX)
+    const search = document.getElementById("search");
+    if (search) search.value = "";
 }
 
 /* =====================
@@ -108,6 +117,7 @@ function renderMessages(messages) {
 
         const wrap = document.createElement("div");
         wrap.classList.add("message-wrapper", msg.author.role);
+        wrap.dataset.text = (msg.text || "").toLowerCase();
 
         const meta = document.createElement("div");
         meta.className = "message-meta";
@@ -123,7 +133,7 @@ function renderMessages(messages) {
 
             for (const att of msg.attachments) {
                 if (!att.local_path) continue;
-                const path = "../" + att.local_path.replace("\\", "/");
+                const path = "../" + att.local_path.replaceAll("\\", "/");
 
                 if (att.type === "photo") {
                     const img = document.createElement("img");
@@ -149,6 +159,64 @@ function renderMessages(messages) {
 }
 
 /* =====================
+   Search (current page only)
+   ===================== */
+
+function setupSearch() {
+    const input = document.getElementById("search");
+
+    input.addEventListener("input", () => {
+        const query = input.value.trim().toLowerCase();
+        const wrappers = document.querySelectorAll(".message-wrapper");
+
+        wrappers.forEach(wrapper => {
+            const text = wrapper.dataset.text || "";
+            const bubble = wrapper.querySelector(".message");
+
+            if (!query) {
+                wrapper.style.display = "";
+                bubble.innerHTML = bubble.textContent;
+                return;
+            }
+
+            if (text.includes(query)) {
+                wrapper.style.display = "";
+                const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+                bubble.innerHTML = bubble.textContent.replace(regex, "<mark>$1</mark>");
+            } else {
+                wrapper.style.display = "none";
+            }
+        });
+    });
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/* =====================
+   Controls
+   ===================== */
+
+function setupPaginationControls() {
+    document.getElementById("prev-page").onclick = () => {
+        // newer
+        if (pageIndex > 0) {
+            pageIndex--;
+            renderPage();
+        }
+    };
+
+    document.getElementById("next-page").onclick = () => {
+        // older
+        if (pageIndex < totalPages - 1) {
+            pageIndex++;
+            renderPage();
+        }
+    };
+}
+
+/* =====================
    Init
    ===================== */
 
@@ -156,11 +224,12 @@ async function loadMessages() {
     const res = await fetch("../export/messages.json");
     allMessages = await res.json();
 
-    totalPages = Math.ceil(allMessages.length / pageSize);
-    currentPage = totalPages - 1; // start from latest
+    totalPages = Math.max(1, Math.ceil(allMessages.length / pageSize));
+    pageIndex = 0; // start at latest
 
     setupTheme();
-    setupPagination();
+    setupPaginationControls();
+    setupSearch();
     renderPage();
 }
 
