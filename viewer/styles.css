@@ -15,7 +15,6 @@
 
     --mark: #fde047;
 
-    /* Layout */
     --content-max: 1100px;
     --chat-max: 760px;
     --content-padding: 16px;
@@ -45,15 +44,14 @@ body {
     background: var(--bg);
 }
 
-/* Overall page container */
+/* App container */
 #app {
     max-width: var(--content-max);
     margin: 0 auto;
     min-height: 100vh;
-    box-sizing: border-box;
 }
 
-/* Header block */
+/* Header */
 #header {
     margin: 12px var(--content-padding) 0;
     padding: 12px 14px;
@@ -63,7 +61,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    box-sizing: border-box;
 }
 
 .header-top {
@@ -82,25 +79,18 @@ body {
     color: var(--header-text);
     font-size: 18px;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 8px;
-}
-
-.controls button:hover {
-    background: rgba(255, 255, 255, 0.12);
 }
 
 #search {
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: none;
     font-size: 14px;
     background: var(--search-bg);
     color: var(--search-text);
-    outline: none;
 }
 
-/* Pagination bar (centered like VK controls) */
+/* Pagination */
 .pagination {
     max-width: var(--chat-max);
     margin: 12px auto 10px;
@@ -119,15 +109,12 @@ body {
     cursor: pointer;
 }
 
-.pagination button:hover {
-    background: rgba(107, 114, 128, 0.12);
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
-#page-label {
-    color: var(--meta);
-}
-
-/* Chat panel — narrow column, not full width */
+/* Messages panel */
 #messages {
     max-width: var(--chat-max);
     margin: 0 auto 24px;
@@ -135,7 +122,6 @@ body {
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.55);
     border: 1px solid rgba(17, 24, 39, 0.06);
-    box-sizing: border-box;
 
     display: flex;
     flex-direction: column;
@@ -151,17 +137,12 @@ body.dark #messages {
     align-self: center;
     font-size: 13px;
     color: var(--meta);
-    margin: 16px 0 8px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(107, 114, 128, 0.10);
+    background: rgba(107, 114, 128, 0.12);
 }
 
-body.dark .day-separator {
-    background: rgba(148, 163, 184, 0.10);
-}
-
-/* Messages */
+/* Message bubbles */
 .message-wrapper {
     display: flex;
     flex-direction: column;
@@ -221,13 +202,7 @@ body.dark .day-separator {
 .attachments img {
     max-width: 420px;
     width: 100%;
-    height: auto;
     border-radius: 10px;
-    border: 1px solid rgba(17, 24, 39, 0.06);
-}
-
-body.dark .attachments img {
-    border: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 audio {
@@ -238,7 +213,6 @@ audio {
 /* Mobile */
 @media (max-width: 820px) {
     :root {
-        --content-padding: 10px;
         --chat-max: calc(100vw - 20px);
     }
     .message-wrapper {

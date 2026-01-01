@@ -2,15 +2,11 @@
    State
    ===================== */
 
-let allMessages = [];
-const pageSize = 100;
-
-// pageIndex = 0 means "latest page"
-let pageIndex = 0;
-let totalPages = 0;
+let meta = null;
+let currentPage = null;
 
 /* =====================
-   Date helpers
+   Helpers
    ===================== */
 
 function formatDateTime(iso) {
@@ -55,43 +51,17 @@ function setupTheme() {
 }
 
 /* =====================
-   Pagination core (from last to first)
+   Data loading
    ===================== */
 
-function getPageSlice() {
-    // We assume allMessages is chronological: oldest -> newest
-    // pageIndex=0 -> last chunk (newest)
-    const total = allMessages.length;
-
-    const end = total - (pageIndex * pageSize);
-    const start = Math.max(0, end - pageSize);
-
-    return allMessages.slice(start, end);
+async function loadMeta() {
+    const res = await fetch("../export/meta.json");
+    meta = await res.json();
 }
 
-function updatePageLabel() {
-    // Display pages as 1..N where 1 is the latest
-    const current = pageIndex + 1;
-    document.getElementById("page-label").textContent = `Page ${current} / ${totalPages}`;
-}
-
-function updateButtons() {
-    const prevBtn = document.getElementById("prev-page"); // newer
-    const nextBtn = document.getElementById("next-page"); // older
-
-    prevBtn.disabled = (pageIndex === 0);
-    nextBtn.disabled = (pageIndex === totalPages - 1);
-}
-
-function renderPage() {
-    const slice = getPageSlice();
-    renderMessages(slice);
-    updatePageLabel();
-    updateButtons();
-
-    // Reset search input when switching pages (safer UX)
-    const search = document.getElementById("search");
-    if (search) search.value = "";
+async function loadPage(pageIndex) {
+    const res = await fetch(`../export/pages/page_${String(pageIndex).padStart(3, "0")}.json`);
+    return await res.json();
 }
 
 /* =====================
@@ -119,9 +89,9 @@ function renderMessages(messages) {
         wrap.classList.add("message-wrapper", msg.author.role);
         wrap.dataset.text = (msg.text || "").toLowerCase();
 
-        const meta = document.createElement("div");
-        meta.className = "message-meta";
-        meta.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "message-meta";
+        metaDiv.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
 
         const bubble = document.createElement("div");
         bubble.classList.add("message", msg.author.role);
@@ -152,10 +122,49 @@ function renderMessages(messages) {
             if (box.children.length > 0) bubble.appendChild(box);
         }
 
-        wrap.appendChild(meta);
+        wrap.appendChild(metaDiv);
         wrap.appendChild(bubble);
         container.appendChild(wrap);
     }
+}
+
+function updatePagination() {
+    document.getElementById("page-label").textContent =
+        `Page ${meta.total_pages - currentPage} / ${meta.total_pages}`;
+
+    document.getElementById("prev-page").disabled = (currentPage === meta.total_pages - 1);
+    document.getElementById("next-page").disabled = (currentPage === 0);
+}
+
+/* =====================
+   Controls
+   ===================== */
+
+function setupControls() {
+    document.getElementById("prev-page").onclick = async () => {
+        if (currentPage < meta.total_pages - 1) {
+            currentPage++;
+            await showPage(currentPage);
+        }
+    };
+
+    document.getElementById("next-page").onclick = async () => {
+        if (currentPage > 0) {
+            currentPage--;
+            await showPage(currentPage);
+        }
+    };
+}
+
+async function showPage(pageIndex) {
+    const page = await loadPage(pageIndex);
+    currentPage = pageIndex;
+    renderMessages(page.messages);
+    updatePagination();
+
+    // reset search
+    const search = document.getElementById("search");
+    if (search) search.value = "";
 }
 
 /* =====================
@@ -166,71 +175,41 @@ function setupSearch() {
     const input = document.getElementById("search");
 
     input.addEventListener("input", () => {
-        const query = input.value.trim().toLowerCase();
+        const q = input.value.trim().toLowerCase();
         const wrappers = document.querySelectorAll(".message-wrapper");
 
-        wrappers.forEach(wrapper => {
-            const text = wrapper.dataset.text || "";
-            const bubble = wrapper.querySelector(".message");
+        wrappers.forEach(wrap => {
+            const text = wrap.dataset.text || "";
+            const bubble = wrap.querySelector(".message");
 
-            if (!query) {
-                wrapper.style.display = "";
+            if (!q) {
+                wrap.style.display = "";
                 bubble.innerHTML = bubble.textContent;
-                return;
-            }
-
-            if (text.includes(query)) {
-                wrapper.style.display = "";
-                const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-                bubble.innerHTML = bubble.textContent.replace(regex, "<mark>$1</mark>");
+            } else if (text.includes(q)) {
+                wrap.style.display = "";
+                const re = new RegExp(`(${q})`, "gi");
+                bubble.innerHTML = bubble.textContent.replace(re, "<mark>$1</mark>");
             } else {
-                wrapper.style.display = "none";
+                wrap.style.display = "none";
             }
         });
     });
-}
-
-function escapeRegExp(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/* =====================
-   Controls
-   ===================== */
-
-function setupPaginationControls() {
-    document.getElementById("prev-page").onclick = () => {
-        // newer
-        if (pageIndex > 0) {
-            pageIndex--;
-            renderPage();
-        }
-    };
-
-    document.getElementById("next-page").onclick = () => {
-        // older
-        if (pageIndex < totalPages - 1) {
-            pageIndex++;
-            renderPage();
-        }
-    };
 }
 
 /* =====================
    Init
    ===================== */
 
-async function loadMessages() {
-    const res = await fetch("../export/messages.json");
-    allMessages = await res.json();
-
-    totalPages = Math.max(1, Math.ceil(allMessages.length / pageSize));
-    pageIndex = 0; // start at latest
+async function init() {
+    await loadMeta();
 
     setupTheme();
-    setupPaginationControls();
+    setupControls();
     setupSearch();
-    renderPage();
+
+    // start from LAST page (latest messages)
+    const lastPage = meta.total_pages - 1;
+    await showPage(lastPage);
 }
 
-loadMessages();
+init();
