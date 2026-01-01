@@ -2,33 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Last Seen — Dialog Viewer</title>
+    <title>Last Seen — Offline Dialog</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div id="app">
+
     <div id="header">
         <div class="header-top">
             <div class="title">Last Seen — Offline Dialog</div>
             <div class="controls">
                 <button id="theme-toggle" title="Toggle theme">🌙</button>
-                <button id="scroll-toggle" title="Autoscroll / Jump to bottom">⬇️</button>
             </div>
         </div>
 
-        <input
-            id="search"
-            type="text"
-            placeholder="Search messages…"
-        >
+        <input id="search" type="text" placeholder="Search messages (page only)…">
     </div>
+
     <div class="pagination">
-    <button id="prev-page">← Prev</button>
-    <span id="page-label"></span>
-    <button id="next-page">Next →</button>
-</div>
+        <button id="prev-page">← Prev</button>
+        <span id="page-label"></span>
+        <button id="next-page">Next →</button>
+    </div>
+
     <div id="messages"></div>
+
 </div>
 
 <script src="app.js"></script>

@@ -1,5 +1,5 @@
 /* =====================
-   Global state
+   State
    ===================== */
 
 let allMessages = [];
@@ -11,9 +11,9 @@ let totalPages = 0;
    Date helpers
    ===================== */
 
-function formatDateTime(isoString) {
-    const date = new Date(isoString);
-    return date.toLocaleString(undefined, {
+function formatDateTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, {
         year: "numeric",
         month: "short",
         day: "2-digit",
@@ -22,9 +22,9 @@ function formatDateTime(isoString) {
     });
 }
 
-function formatDay(isoString) {
-    const date = new Date(isoString);
-    return date.toLocaleDateString(undefined, {
+function formatDay(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric"
@@ -36,60 +36,57 @@ function formatDay(isoString) {
    ===================== */
 
 function setupTheme() {
-    const toggle = document.getElementById("theme-toggle");
+    const btn = document.getElementById("theme-toggle");
     const saved = localStorage.getItem("theme");
 
     if (saved === "dark") {
         document.body.classList.add("dark");
-        toggle.textContent = "☀";
+        btn.textContent = "☀";
     }
 
-    toggle.addEventListener("click", () => {
+    btn.onclick = () => {
         document.body.classList.toggle("dark");
         const isDark = document.body.classList.contains("dark");
-        toggle.textContent = isDark ? "☀" : "🌙";
+        btn.textContent = isDark ? "☀" : "🌙";
         localStorage.setItem("theme", isDark ? "dark" : "light");
-    });
+    };
 }
 
 /* =====================
    Pagination
    ===================== */
 
-function setupPaginationControls() {
+function setupPagination() {
     document.getElementById("prev-page").onclick = () => {
         if (currentPage > 0) {
             currentPage--;
-            renderCurrentPage();
+            renderPage();
         }
     };
 
     document.getElementById("next-page").onclick = () => {
         if (currentPage < totalPages - 1) {
             currentPage++;
-            renderCurrentPage();
+            renderPage();
         }
     };
 }
 
-function renderCurrentPage() {
-    const start = currentPage * pageSize;
-    const end = start + pageSize;
-    const slice = allMessages.slice(start, end);
-
-    renderMessages(slice);
-    updatePaginationLabel();
-
-    window.scrollTo(0, document.body.scrollHeight);
-}
-
-function updatePaginationLabel() {
+function updatePageLabel() {
     document.getElementById("page-label").textContent =
         `Page ${currentPage + 1} / ${totalPages}`;
 }
 
+function renderPage() {
+    const start = currentPage * pageSize;
+    const end = start + pageSize;
+    renderMessages(allMessages.slice(start, end));
+    updatePageLabel();
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
 /* =====================
-   Messages rendering
+   Rendering
    ===================== */
 
 function renderMessages(messages) {
@@ -109,8 +106,8 @@ function renderMessages(messages) {
             lastDay = day;
         }
 
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("message-wrapper", msg.author.role);
+        const wrap = document.createElement("div");
+        wrap.classList.add("message-wrapper", msg.author.role);
 
         const meta = document.createElement("div");
         meta.className = "message-meta";
@@ -142,14 +139,12 @@ function renderMessages(messages) {
                 }
             }
 
-            if (box.children.length > 0) {
-                bubble.appendChild(box);
-            }
+            if (box.children.length > 0) bubble.appendChild(box);
         }
 
-        wrapper.appendChild(meta);
-        wrapper.appendChild(bubble);
-        container.appendChild(wrapper);
+        wrap.appendChild(meta);
+        wrap.appendChild(bubble);
+        container.appendChild(wrap);
     }
 }
 
@@ -162,13 +157,11 @@ async function loadMessages() {
     allMessages = await res.json();
 
     totalPages = Math.ceil(allMessages.length / pageSize);
-
-    // start from last page (latest messages)
-    currentPage = totalPages - 1;
+    currentPage = totalPages - 1; // start from latest
 
     setupTheme();
-    setupPaginationControls();
-    renderCurrentPage();
+    setupPagination();
+    renderPage();
 }
 
 loadMessages();
