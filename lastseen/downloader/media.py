@@ -88,3 +88,11 @@ def download_media(
 
     logger.info(f"Downloaded {downloaded} new files")
     return downloaded
+
+def download_attachments(attachments, output_dir):
+    """
+    Compatibility wrapper for CLI.
+    Expects a list of attachment dicts with `url` or `download_url`.
+    Returns number of downloaded files.
+    """
+    return download_media(attachments, output_dir)

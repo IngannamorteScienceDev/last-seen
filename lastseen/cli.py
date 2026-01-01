@@ -1,12 +1,16 @@
 import argparse
-import json
 from pathlib import Path
 
 from tqdm import tqdm
 
 from lastseen.parser.vk_html import parse_messages_page
-from lastseen.downloader.media import download_attachments
 from lastseen.exporter.chunked_json import export_chunked_dialog
+
+# downloader is optional
+try:
+    from lastseen.downloader.media import download_attachments
+except ImportError:
+    download_attachments = None
 
 
 def collect_html_pages(dialog_dir: Path):
@@ -51,17 +55,22 @@ def main():
 
     print(f"[INFO] Total messages parsed: {len(messages)}")
 
-    if not args.no_media:
-        attachments = []
-        for msg in messages:
-            attachments.extend(msg.get("attachments", []))
-
-        print(f"[INFO] Downloading {len(attachments)} attachments")
-        downloaded = download_attachments(attachments, export_dir / "media")
-        print(f"[INFO] Downloaded {downloaded} new files")
-    else:
+    # --- media ---
+    if args.no_media:
         print("[INFO] Media download skipped (--no-media)")
+    else:
+        if download_attachments is None:
+            print("[WARN] Media downloader not available, skipping media")
+        else:
+            attachments = []
+            for msg in messages:
+                attachments.extend(msg.get("attachments", []))
 
+            print(f"[INFO] Downloading {len(attachments)} attachments")
+            downloaded = download_attachments(attachments, export_dir / "media")
+            print(f"[INFO] Downloaded {downloaded} new files")
+
+    # --- chunked export ---
     print("[INFO] Exporting messages as chunked JSON")
     export_chunked_dialog(
         messages=messages,
