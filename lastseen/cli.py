@@ -1,96 +1,75 @@
 import argparse
-import logging
+import json
 from pathlib import Path
 
-from lastseen.logging import setup_logging
-from lastseen.parser import parse_dialog_folder
-from lastseen.exporter.json_export import export_messages_to_json
-from lastseen.downloader.media import download_media
+from tqdm import tqdm
+
+from lastseen.parser.vk_html import parse_messages_page
+from lastseen.downloader.media import download_attachments
+from lastseen.exporter.chunked_json import export_chunked_dialog
 
 
-def build_arg_parser() -> argparse.ArgumentParser:
+def collect_html_pages(dialog_dir: Path):
+    pages = sorted(dialog_dir.glob("messages*.html"))
+    if not pages:
+        raise FileNotFoundError("No messages*.html files found")
+    return pages
+
+
+def main():
     parser = argparse.ArgumentParser(
-        prog="last-seen",
-        description="Create an offline JSON mirror of a VK dialog from HTML archive"
+        description="Last Seen — offline VK dialog processor"
     )
-
     parser.add_argument(
         "-i", "--input",
-        type=Path,
         required=True,
         help="Path to dialog folder containing messages*.html files"
     )
-
-    parser.add_argument(
-        "-o", "--output",
-        type=Path,
-        default=Path("export/messages.json"),
-        help="Path to output JSON file (default: export/messages.json)"
-    )
-
-    parser.add_argument(
-        "--no-export",
-        action="store_true",
-        help="Parse dialog but do not export JSON file"
-    )
-
     parser.add_argument(
         "--no-media",
         action="store_true",
-        help="Do not download media attachments"
+        help="Skip media downloading"
     )
 
-    verbosity = parser.add_mutually_exclusive_group()
-    verbosity.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
-    )
-    verbosity.add_argument(
-        "-q", "--quiet",
-        action="store_true",
-        help="Suppress non-critical output"
-    )
-
-    return parser
-
-
-def main() -> None:
-    parser = build_arg_parser()
     args = parser.parse_args()
 
-    # Logging level
-    if args.quiet:
-        log_level = logging.WARNING
-    elif args.verbose:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.INFO
+    dialog_dir = Path(args.input)
+    export_dir = Path("export")
+    export_dir.mkdir(exist_ok=True)
 
-    setup_logging(log_level)
+    print("[INFO] Last Seen — offline VK dialog processor")
+    print(f"[INFO] Parsing dialog folder: {dialog_dir}")
 
-    logging.info("Last Seen — offline VK dialog processor")
+    html_pages = collect_html_pages(dialog_dir)
+    print(f"[INFO] Found {len(html_pages)} HTML pages")
 
-    dialog_path: Path = args.input
-    output_path: Path = args.output
+    messages = []
 
-    # 1️⃣ Parse dialog
-    messages = parse_dialog_folder(dialog_path)
+    for html_path in tqdm(html_pages, desc="Parsing message pages", unit="page"):
+        page_messages = parse_messages_page(html_path)
+        messages.extend(page_messages)
 
-    # 2️⃣ Download media (optional)
+    print(f"[INFO] Total messages parsed: {len(messages)}")
+
     if not args.no_media:
-        media_root = output_path.parent / "media"
-        download_media(messages, media_root)
+        attachments = []
+        for msg in messages:
+            attachments.extend(msg.get("attachments", []))
+
+        print(f"[INFO] Downloading {len(attachments)} attachments")
+        downloaded = download_attachments(attachments, export_dir / "media")
+        print(f"[INFO] Downloaded {downloaded} new files")
     else:
-        logging.info("Media download skipped (--no-media)")
+        print("[INFO] Media download skipped (--no-media)")
 
-    # 3️⃣ Export JSON (optional)
-    if args.no_export:
-        logging.info("Export skipped (--no-export)")
-        return
+    print("[INFO] Exporting messages as chunked JSON")
+    export_chunked_dialog(
+        messages=messages,
+        output_dir=export_dir,
+        page_size=100,
+    )
 
-    export_messages_to_json(messages, output_path)
-    logging.info(f"Exported {len(messages)} messages to {output_path}")
+    print("[INFO] Done")
 
 
 if __name__ == "__main__":
