@@ -1,4 +1,5 @@
 let meta = null;
+let dateIndex = null;
 let currentPage = null;
 
 /* ---------- helpers ---------- */
@@ -7,7 +8,8 @@ function formatTime(iso) {
     const d = new Date(iso);
     return d.toLocaleTimeString(undefined, {
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        second: "2-digit"
     });
 }
 
@@ -42,15 +44,17 @@ function setupTheme() {
 /* ---------- data ---------- */
 
 async function loadMeta() {
-    const res = await fetch("../export/meta.json");
-    meta = await res.json();
+    meta = await fetch("../export/meta.json").then(r => r.json());
 }
 
-async function loadPage(pageIndex) {
-    const res = await fetch(
-        `../export/pages/page_${String(pageIndex).padStart(3, "0")}.json`
-    );
-    return await res.json();
+async function loadDateIndex() {
+    dateIndex = await fetch("../export/date_index.json").then(r => r.json());
+}
+
+async function loadPage(page) {
+    return await fetch(
+        `../export/pages/page_${String(page).padStart(3, "0")}.json`
+    ).then(r => r.json());
 }
 
 /* ---------- render ---------- */
@@ -61,12 +65,10 @@ function renderMessages(messages) {
 
     let lastDay = null;
 
-    for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i];
+    messages.forEach((msg, i) => {
         const prev = messages[i - 1];
         const next = messages[i + 1];
 
-        // ---- day separator ----
         const day = msg.datetime.split("T")[0];
         if (day !== lastDay) {
             const sep = document.createElement("div");
@@ -76,16 +78,8 @@ function renderMessages(messages) {
             lastDay = day;
         }
 
-        // ---- UNIFIED grouping logic ----
-        const samePrev =
-            prev &&
-            prev.author.role === msg.author.role &&
-            prev.author.name === msg.author.name;
-
-        const sameNext =
-            next &&
-            next.author.role === msg.author.role &&
-            next.author.name === msg.author.name;
+        const samePrev = prev && prev.author.name === msg.author.name;
+        const sameNext = next && next.author.name === msg.author.name;
 
         let group = "start";
         if (samePrev && sameNext) group = "middle";
@@ -94,12 +88,11 @@ function renderMessages(messages) {
         const bubble = document.createElement("div");
         bubble.className = `message ${msg.author.role} ${group}`;
 
-        // meta ONLY at start of group (for BOTH self & other)
         if (!samePrev) {
-            const metaDiv = document.createElement("div");
-            metaDiv.className = "message-meta";
-            metaDiv.textContent = `${msg.author.name} · ${formatTime(msg.datetime)}`;
-            bubble.appendChild(metaDiv);
+            const meta = document.createElement("div");
+            meta.className = "message-meta";
+            meta.textContent = `${msg.author.name}`;
+            bubble.appendChild(meta);
         }
 
         if (msg.text) {
@@ -108,55 +101,91 @@ function renderMessages(messages) {
             bubble.appendChild(text);
         }
 
+        // hover menu
+        const hover = document.createElement("div");
+        hover.className = "hover-menu";
+
+        const time = document.createElement("span");
+        time.className = "hover-time";
+        time.textContent = formatTime(msg.datetime);
+
+        const copy = document.createElement("button");
+        copy.className = "copy-btn";
+        copy.textContent = "📋";
+        copy.onclick = () => navigator.clipboard.writeText(msg.text || "");
+
+        hover.appendChild(time);
+        hover.appendChild(copy);
+        bubble.appendChild(hover);
+
         container.appendChild(bubble);
-    }
+    });
 }
 
 /* ---------- pagination ---------- */
 
-function updatePagination() {
+async function showPage(page) {
+    const data = await loadPage(page);
+    currentPage = page;
+    renderMessages(data.messages);
+
     document.getElementById("page-label").textContent =
-        `Page ${meta.total_pages - currentPage} / ${meta.total_pages}`;
-
-    document.getElementById("prev-page").disabled =
-        currentPage === meta.total_pages - 1;
-
-    document.getElementById("next-page").disabled =
-        currentPage === 0;
-}
-
-async function showPage(pageIndex) {
-    const page = await loadPage(pageIndex);
-    currentPage = pageIndex;
-    renderMessages(page.messages);
-    updatePagination();
+        `Page ${meta.total_pages - page} / ${meta.total_pages}`;
 }
 
 function setupPagination() {
     document.getElementById("prev-page").onclick = () => {
-        if (currentPage < meta.total_pages - 1) {
-            showPage(currentPage + 1);
-        }
+        if (currentPage < meta.total_pages - 1) showPage(currentPage + 1);
     };
 
     document.getElementById("next-page").onclick = () => {
-        if (currentPage > 0) {
-            showPage(currentPage - 1);
-        }
+        if (currentPage > 0) showPage(currentPage - 1);
     };
 }
 
-/* ---------- search ---------- */
+/* ---------- sticky date ---------- */
 
-function setupSearch() {
-    const input = document.getElementById("search");
-    input.addEventListener("input", () => {
-        const q = input.value.toLowerCase();
-        document.querySelectorAll(".message").forEach(m => {
-            m.style.display = !q || m.textContent.toLowerCase().includes(q)
-                ? ""
-                : "none";
-        });
+function setupStickyDate() {
+    const messagesEl = document.querySelector(".messages");
+    const sticky = document.getElementById("sticky-date");
+
+    messagesEl.addEventListener("scroll", () => {
+        const times = [...messagesEl.querySelectorAll(".time")];
+        let current = null;
+
+        for (const t of times) {
+            const r = t.getBoundingClientRect();
+            const pr = messagesEl.getBoundingClientRect();
+            if (r.top - pr.top <= 8) current = t;
+            else break;
+        }
+
+        if (current) {
+            sticky.textContent = current.textContent;
+            sticky.classList.add("visible");
+        }
+    });
+}
+
+/* ---------- jump to date ---------- */
+
+function setupDatePicker() {
+    const picker = document.getElementById("date-picker");
+
+    picker.addEventListener("change", async () => {
+        const date = picker.value;
+        if (!dateIndex[date]) {
+            alert("No messages on this date");
+            return;
+        }
+
+        const { page, offset } = dateIndex[date];
+        await showPage(page);
+
+        const bubbles = document.querySelectorAll(".message");
+        if (bubbles[offset]) {
+            bubbles[offset].scrollIntoView({ behavior: "smooth" });
+        }
     });
 }
 
@@ -164,12 +193,14 @@ function setupSearch() {
 
 async function init() {
     await loadMeta();
+    await loadDateIndex();
+
     setupTheme();
     setupPagination();
-    setupSearch();
+    setupStickyDate();
+    setupDatePicker();
 
-    const lastPage = meta.total_pages - 1;
-    showPage(lastPage);
+    await showPage(meta.total_pages - 1);
 }
 
 init();
