@@ -11,7 +11,7 @@
     --text-main: #050505;
     --text-muted: #65676b;
 
-    /* reference dark bubble (self) */
+    /* reference-style dark bubble for self */
     --bubble-self: #2b2e33;
     --bubble-self-text: #ffffff;
 
@@ -202,7 +202,7 @@ body {
     box-shadow: var(--shadow-bubble-self);
 }
 
-/* Grouped shapes */
+/* Grouped shapes (IDENTICAL LOGIC FOR BOTH SIDES) */
 .message.start {
     border-radius: 18px 18px 18px 6px;
 }
@@ -229,23 +229,6 @@ body {
     font-size: 11px;
     color: var(--text-muted);
     margin-bottom: 4px;
-}
-
-/* =====================
-   ATTACHMENTS
-   ===================== */
-
-.attachments {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.attachments img {
-    max-width: 100%;
-    border-radius: 12px;
-    box-shadow: var(--shadow-bubble);
 }
 
 /* =====================

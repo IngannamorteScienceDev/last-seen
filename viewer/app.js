@@ -66,6 +66,7 @@ function renderMessages(messages) {
         const prev = messages[i - 1];
         const next = messages[i + 1];
 
+        // ---- day separator ----
         const day = msg.datetime.split("T")[0];
         if (day !== lastDay) {
             const sep = document.createElement("div");
@@ -75,8 +76,16 @@ function renderMessages(messages) {
             lastDay = day;
         }
 
-        const samePrev = prev && prev.author.role === msg.author.role;
-        const sameNext = next && next.author.role === msg.author.role;
+        // ---- UNIFIED grouping logic ----
+        const samePrev =
+            prev &&
+            prev.author.role === msg.author.role &&
+            prev.author.name === msg.author.name;
+
+        const sameNext =
+            next &&
+            next.author.role === msg.author.role &&
+            next.author.name === msg.author.name;
 
         let group = "start";
         if (samePrev && sameNext) group = "middle";
@@ -85,6 +94,7 @@ function renderMessages(messages) {
         const bubble = document.createElement("div");
         bubble.className = `message ${msg.author.role} ${group}`;
 
+        // meta ONLY at start of group (for BOTH self & other)
         if (!samePrev) {
             const metaDiv = document.createElement("div");
             metaDiv.className = "message-meta";
