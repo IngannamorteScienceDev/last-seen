@@ -1,4 +1,13 @@
 /* =====================
+   Global state
+   ===================== */
+
+let allMessages = [];
+let pageSize = 100;
+let currentPage = 0;
+let totalPages = 0;
+
+/* =====================
    Date helpers
    ===================== */
 
@@ -44,61 +53,44 @@ function setupTheme() {
 }
 
 /* =====================
-   Autoscroll toggle
+   Pagination
    ===================== */
 
-function setupAutoscroll() {
-    const toggle = document.getElementById("scroll-toggle");
-    const saved = localStorage.getItem("autoscroll");
+function setupPaginationControls() {
+    document.getElementById("prev-page").onclick = () => {
+        if (currentPage > 0) {
+            currentPage--;
+            renderCurrentPage();
+        }
+    };
 
-    let enabled = saved !== "false"; // default true
-    toggle.textContent = enabled ? "⬇️" : "⬆️";
-
-    toggle.addEventListener("click", () => {
-        enabled = !enabled;
-        localStorage.setItem("autoscroll", enabled ? "true" : "false");
-        toggle.textContent = enabled ? "⬇️" : "⬆️";
-    });
-
-    return () => {
-        if (enabled) {
-            window.scrollTo(0, document.body.scrollHeight);
+    document.getElementById("next-page").onclick = () => {
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            renderCurrentPage();
         }
     };
 }
 
-/* =====================
-   Jump to bottom (dblclick)
-   ===================== */
+function renderCurrentPage() {
+    const start = currentPage * pageSize;
+    const end = start + pageSize;
+    const slice = allMessages.slice(start, end);
 
-function setupJumpToBottom() {
-    const button = document.getElementById("scroll-toggle");
+    renderMessages(slice);
+    updatePaginationLabel();
 
-    button.addEventListener("dblclick", () => {
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth"
-        });
-    });
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function updatePaginationLabel() {
+    document.getElementById("page-label").textContent =
+        `Page ${currentPage + 1} / ${totalPages}`;
 }
 
 /* =====================
-   Messages
+   Messages rendering
    ===================== */
-
-async function loadMessages() {
-    const response = await fetch("../export/messages.json");
-    const messages = await response.json();
-
-    renderMessages(messages);
-    setupSearch();
-    setupTheme();
-
-    const applyAutoscroll = setupAutoscroll();
-    applyAutoscroll();
-
-    setupJumpToBottom();
-}
 
 function renderMessages(messages) {
     const container = document.getElementById("messages");
@@ -107,19 +99,18 @@ function renderMessages(messages) {
     let lastDay = null;
 
     for (const msg of messages) {
-        const currentDay = msg.datetime.split("T")[0];
+        const day = msg.datetime.split("T")[0];
 
-        if (currentDay !== lastDay) {
+        if (day !== lastDay) {
             const sep = document.createElement("div");
             sep.className = "day-separator";
             sep.textContent = formatDay(msg.datetime);
             container.appendChild(sep);
-            lastDay = currentDay;
+            lastDay = day;
         }
 
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper", msg.author.role);
-        wrapper.dataset.text = (msg.text || "").toLowerCase();
 
         const meta = document.createElement("div");
         meta.className = "message-meta";
@@ -163,35 +154,21 @@ function renderMessages(messages) {
 }
 
 /* =====================
-   Search
+   Init
    ===================== */
 
-function setupSearch() {
-    const input = document.getElementById("search");
+async function loadMessages() {
+    const res = await fetch("../export/messages.json");
+    allMessages = await res.json();
 
-    input.addEventListener("input", () => {
-        const query = input.value.trim().toLowerCase();
-        const wrappers = document.querySelectorAll(".message-wrapper");
+    totalPages = Math.ceil(allMessages.length / pageSize);
 
-        wrappers.forEach(wrapper => {
-            const text = wrapper.dataset.text;
-            const bubble = wrapper.querySelector(".message");
+    // start from last page (latest messages)
+    currentPage = totalPages - 1;
 
-            if (!query) {
-                wrapper.style.display = "";
-                bubble.innerHTML = bubble.textContent;
-                return;
-            }
-
-            if (text.includes(query)) {
-                wrapper.style.display = "";
-                const regex = new RegExp(`(${query})`, "gi");
-                bubble.innerHTML = bubble.textContent.replace(regex, "<mark>$1</mark>");
-            } else {
-                wrapper.style.display = "none";
-            }
-        });
-    });
+    setupTheme();
+    setupPaginationControls();
+    renderCurrentPage();
 }
 
 loadMessages();

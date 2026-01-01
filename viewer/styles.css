@@ -252,3 +252,25 @@ audio {
         max-width: 100%;
     }
 }
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.pagination button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--bubble-other-text);
+}
+
+.pagination button:hover {
+    background: rgba(107, 114, 128, 0.12);
+}
