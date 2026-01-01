@@ -9,9 +9,9 @@ let currentPage = null;
    HELPERS
    ===================== */
 
-function formatDateTime(iso) {
+function formatTime(iso) {
     const d = new Date(iso);
-    return d.toLocaleString(undefined, {
+    return d.toLocaleTimeString(undefined, {
         hour: "2-digit",
         minute: "2-digit"
     });
@@ -41,9 +41,9 @@ function setupTheme() {
 
     btn.onclick = () => {
         document.body.classList.toggle("dark");
-        const isDark = document.body.classList.contains("dark");
-        btn.textContent = isDark ? "☀" : "🌙";
-        localStorage.setItem("theme", isDark ? "dark" : "light");
+        const dark = document.body.classList.contains("dark");
+        btn.textContent = dark ? "☀" : "🌙";
+        localStorage.setItem("theme", dark ? "dark" : "light");
     };
 }
 
@@ -68,39 +68,55 @@ async function loadPage(pageIndex) {
    ===================== */
 
 function renderMessages(messages) {
-    const container = document.getElementById("messages");
+    const container = document.querySelector(".messages");
+    if (!container) {
+        console.error("Messages container not found");
+        return;
+    }
+
     container.innerHTML = "";
 
     let lastDay = null;
 
-    for (const msg of messages) {
-        const day = msg.datetime.split("T")[0];
+    for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        const prev = messages[i - 1];
+        const next = messages[i + 1];
 
+        const day = msg.datetime.split("T")[0];
         if (day !== lastDay) {
-            const time = document.createElement("div");
-            time.className = "time";
-            time.textContent = formatDay(msg.datetime);
-            container.appendChild(time);
+            const sep = document.createElement("div");
+            sep.className = "time";
+            sep.textContent = formatDay(msg.datetime);
+            container.appendChild(sep);
             lastDay = day;
         }
 
+        const samePrev = prev && prev.author.role === msg.author.role;
+        const sameNext = next && next.author.role === msg.author.role;
+
+        let group = "start";
+        if (samePrev && sameNext) group = "middle";
+        else if (samePrev) group = "end";
+
         const bubble = document.createElement("div");
-        bubble.className = `message ${msg.author.role}`;
+        bubble.className = `message ${msg.author.role} ${group}`;
 
-        // META (author + time)
-        const meta = document.createElement("div");
-        meta.className = "message-meta";
-        meta.textContent = `${msg.author.name} · ${formatDateTime(msg.datetime)}`;
-        bubble.appendChild(meta);
+        // meta only for first in group
+        if (!samePrev) {
+            const metaDiv = document.createElement("div");
+            metaDiv.className = "message-meta";
+            metaDiv.textContent = `${msg.author.name} · ${formatTime(msg.datetime)}`;
+            bubble.appendChild(metaDiv);
+        }
 
-        // TEXT
         if (msg.text) {
             const text = document.createElement("div");
             text.textContent = msg.text;
             bubble.appendChild(text);
         }
 
-        // ATTACHMENTS
+        // attachments (safe)
         if (msg.attachments && msg.attachments.length > 0) {
             const box = document.createElement("div");
             box.className = "attachments";
@@ -150,15 +166,13 @@ function updatePagination() {
 function setupPagination() {
     document.getElementById("prev-page").onclick = async () => {
         if (currentPage < meta.total_pages - 1) {
-            currentPage++;
-            await showPage(currentPage);
+            await showPage(currentPage + 1);
         }
     };
 
     document.getElementById("next-page").onclick = async () => {
         if (currentPage > 0) {
-            currentPage--;
-            await showPage(currentPage);
+            await showPage(currentPage - 1);
         }
     };
 }
@@ -186,8 +200,7 @@ function setupSearch() {
 
         bubbles.forEach(bubble => {
             const text = bubble.textContent.toLowerCase();
-            bubble.style.display =
-                !q || text.includes(q) ? "" : "none";
+            bubble.style.display = !q || text.includes(q) ? "" : "none";
         });
     });
 }
@@ -203,7 +216,7 @@ async function init() {
     setupPagination();
     setupSearch();
 
-    // Start from LAST page (latest messages)
+    // start from LAST page (latest messages)
     const lastPage = meta.total_pages - 1;
     await showPage(lastPage);
 }

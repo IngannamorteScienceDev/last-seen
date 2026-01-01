@@ -2,7 +2,6 @@
    THEME VARIABLES
    ===================== */
 
-/* Light theme — максимально близко к оригинальному CodePen */
 :root {
     --bg: #f0f2f5;
     --chat-bg: #ffffff;
@@ -12,19 +11,20 @@
     --text-main: #050505;
     --text-muted: #65676b;
 
-    --bubble-other: #f0f0f0;
-    --bubble-self: #0084ff;
+    /* NEW primary (self) color */
+    --bubble-self: #4f6ef7;
     --bubble-self-text: #ffffff;
+
+    --bubble-other: #f0f0f0;
 
     --time-bg: #e4e6eb;
     --time-text: #65676b;
 
     --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.08);
     --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.08);
-    --shadow-bubble-self: 0 2px 8px rgba(0, 132, 255, 0.35);
+    --shadow-bubble-self: 0 4px 12px rgba(79, 110, 247, 0.35);
 }
 
-/* Dark theme — в духе оригинала, не инверсия */
 body.dark {
     --bg: #18191a;
     --chat-bg: #242526;
@@ -34,16 +34,16 @@ body.dark {
     --text-main: #e4e6eb;
     --text-muted: #b0b3b8;
 
-    --bubble-other: #3a3b3c;
-    --bubble-self: #0084ff;
+    --bubble-self: #4f6ef7;
     --bubble-self-text: #ffffff;
+    --bubble-other: #3a3b3c;
 
     --time-bg: #3a3b3c;
     --time-text: #b0b3b8;
 
     --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.5);
     --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.4);
-    --shadow-bubble-self: 0 2px 10px rgba(0, 132, 255, 0.45);
+    --shadow-bubble-self: 0 4px 14px rgba(79, 110, 247, 0.45);
 }
 
 /* =====================
@@ -63,7 +63,7 @@ body {
 }
 
 /* =====================
-   APP CONTAINER
+   APP / CHAT
    ===================== */
 
 #app {
@@ -71,10 +71,6 @@ body {
     margin: 0 auto;
     padding: 16px;
 }
-
-/* =====================
-   CHAT CONTAINER
-   ===================== */
 
 .chat {
     background: var(--chat-bg);
@@ -87,14 +83,13 @@ body {
 }
 
 /* =====================
-   HEADER / CONTACT BAR
+   HEADER
    ===================== */
 
 .contact.bar {
     background: var(--header-bg);
     border-bottom: 1px solid var(--border);
     padding: 12px 16px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -123,7 +118,7 @@ body {
 }
 
 /* =====================
-   PAGINATION
+   PAGINATION + SEARCH
    ===================== */
 
 .pagination {
@@ -131,9 +126,7 @@ body {
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: center;
-    align-items: center;
     gap: 12px;
-    font-size: 14px;
 }
 
 .pagination button {
@@ -142,52 +135,37 @@ body {
     border-radius: 8px;
     padding: 6px 12px;
     cursor: pointer;
-    color: var(--text-main);
 }
-
-.pagination button:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.04);
-}
-
-body.dark .pagination button:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.pagination button:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-/* =====================
-   SEARCH
-   ===================== */
 
 #search {
     width: 100%;
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: var(--chat-bg);
-    color: var(--text-main);
     margin: 8px 0;
 }
 
 /* =====================
-   MESSAGES AREA
+   MESSAGES
    ===================== */
 
 .messages {
     flex: 1;
     padding: 16px;
     overflow-y: auto;
-
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
 }
 
 /* =====================
-   TIME SEPARATOR
+   DAY SEPARATOR
    ===================== */
 
 .time {
@@ -197,6 +175,7 @@ body.dark .pagination button:hover:not(:disabled) {
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 999px;
+    margin: 12px 0;
 }
 
 /* =====================
@@ -206,41 +185,43 @@ body.dark .pagination button:hover:not(:disabled) {
 .message {
     max-width: 72%;
     padding: 10px 14px;
-    border-radius: 18px;
     line-height: 1.45;
-    white-space: pre-wrap;
-    word-break: break-word;
-
     background: var(--bubble-other);
     color: var(--text-main);
     box-shadow: var(--shadow-bubble);
-
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-.message:hover {
-    transform: translateY(-1px);
-}
-
-/* Self (your messages) */
+/* Self */
 .message.self {
     align-self: flex-end;
     background: var(--bubble-self);
     color: var(--bubble-self-text);
     box-shadow: var(--shadow-bubble-self);
-    border-bottom-right-radius: 6px;
 }
 
-/* Other */
-.message.other {
-    align-self: flex-start;
-    border-bottom-left-radius: 6px;
+/* Bubble shapes (grouped) */
+.message.start {
+    border-radius: 18px 18px 18px 6px;
+}
+.message.middle {
+    border-radius: 18px 6px 18px 6px;
+}
+.message.end {
+    border-radius: 18px 6px 6px 18px;
 }
 
-/* =====================
-   MESSAGE META
-   ===================== */
+/* Self variants */
+.message.self.start {
+    border-radius: 18px 18px 6px 18px;
+}
+.message.self.middle {
+    border-radius: 6px 18px 6px 18px;
+}
+.message.self.end {
+    border-radius: 6px 18px 18px 18px;
+}
 
+/* Meta */
 .message-meta {
     font-size: 11px;
     color: var(--text-muted);
@@ -260,31 +241,6 @@ body.dark .pagination button:hover:not(:disabled) {
 
 .attachments img {
     max-width: 360px;
-    width: 100%;
     border-radius: 12px;
     box-shadow: var(--shadow-bubble);
-}
-
-audio {
-    width: 300px;
-    max-width: 100%;
-}
-
-/* =====================
-   MOBILE
-   ===================== */
-
-@media (max-width: 768px) {
-    #app {
-        padding: 8px;
-    }
-
-    .chat {
-        height: calc(100vh - 16px);
-        border-radius: 10px;
-    }
-
-    .message {
-        max-width: 88%;
-    }
 }
