@@ -11,7 +11,7 @@
     --text-main: #050505;
     --text-muted: #65676b;
 
-    /* reference-style dark bubble for self */
+    /* Dark neutral bubble for self (reference-style) */
     --bubble-self: #2b2e33;
     --bubble-self-text: #ffffff;
 
@@ -147,13 +147,14 @@ body {
 }
 
 /* =====================
-   MESSAGES
+   MESSAGES CONTAINER
    ===================== */
 
 .messages {
     flex: 1;
     padding: 16px;
     overflow-y: auto;
+
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -179,6 +180,7 @@ body {
 
 .message {
     display: inline-block;
+    align-self: flex-start; /* ⬅️ КЛЮЧЕВО: НЕ stretch */
 
     min-width: 60px;
     max-width: 420px;
@@ -194,7 +196,7 @@ body {
     overflow-wrap: anywhere;
 }
 
-/* Self */
+/* Self messages */
 .message.self {
     align-self: flex-end;
     background: var(--bubble-self);
@@ -202,29 +204,40 @@ body {
     box-shadow: var(--shadow-bubble-self);
 }
 
-/* Grouped shapes (IDENTICAL LOGIC FOR BOTH SIDES) */
+/* =====================
+   GROUPED SHAPES
+   ===================== */
+
+/* Other */
 .message.start {
     border-radius: 18px 18px 18px 6px;
 }
+
 .message.middle {
     border-radius: 18px 6px 18px 6px;
 }
+
 .message.end {
     border-radius: 18px 6px 6px 18px;
 }
 
-/* Self grouped */
+/* Self */
 .message.self.start {
     border-radius: 18px 18px 6px 18px;
 }
+
 .message.self.middle {
     border-radius: 6px 18px 6px 18px;
 }
+
 .message.self.end {
     border-radius: 6px 18px 18px 18px;
 }
 
-/* Meta */
+/* =====================
+   META
+   ===================== */
+
 .message-meta {
     font-size: 11px;
     color: var(--text-muted);
