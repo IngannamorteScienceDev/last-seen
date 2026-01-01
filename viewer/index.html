@@ -19,7 +19,11 @@
                     <div class="contact-status">Offline archive</div>
                 </div>
             </div>
-            <button id="theme-toggle" title="Toggle theme">🌙</button>
+
+            <div class="header-actions">
+                <input type="date" id="date-picker" title="Jump to date">
+                <button id="theme-toggle">🌙</button>
+            </div>
         </div>
 
         <!-- PAGINATION -->
@@ -29,13 +33,11 @@
             <button id="next-page">Older →</button>
         </div>
 
-        <!-- SEARCH -->
-        <div style="padding: 0 12px;">
-            <input id="search" type="text" placeholder="Search messages on this page…">
-        </div>
-
         <!-- MESSAGES -->
-        <div class="messages"></div>
+        <div class="messages-wrapper">
+            <div id="sticky-date" class="sticky-date"></div>
+            <div class="messages"></div>
+        </div>
 
     </div>
 </div>

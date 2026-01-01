@@ -1,255 +1,37 @@
 /* =====================
-   THEME VARIABLES
-   ===================== */
-
-:root {
-    --bg: #f0f2f5;
-    --chat-bg: #ffffff;
-    --header-bg: #ffffff;
-    --border: #e4e6eb;
-
-    --text-main: #050505;
-    --text-muted: #65676b;
-
-    /* Dark neutral bubble for self (reference-style) */
-    --bubble-self: #2b2e33;
-    --bubble-self-text: #ffffff;
-
-    --bubble-other: #f0f0f0;
-
-    --time-bg: #e4e6eb;
-    --time-text: #65676b;
-
-    --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.08);
-    --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.08);
-    --shadow-bubble-self: 0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
-body.dark {
-    --bg: #18191a;
-    --chat-bg: #242526;
-    --header-bg: #242526;
-    --border: #3a3b3c;
-
-    --text-main: #e4e6eb;
-    --text-muted: #b0b3b8;
-
-    --bubble-self: #2b2e33;
-    --bubble-self-text: #ffffff;
-
-    --bubble-other: #3a3b3c;
-
-    --time-bg: #3a3b3c;
-    --time-text: #b0b3b8;
-
-    --shadow-chat: 0 12px 30px rgba(0, 0, 0, 0.5);
-    --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.4);
-    --shadow-bubble-self: 0 4px 14px rgba(0, 0, 0, 0.6);
-}
-
-/* =====================
-   BASE
-   ===================== */
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text-main);
-}
-
-/* =====================
-   APP / CHAT
-   ===================== */
-
-#app {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 16px;
-}
-
-.chat {
-    background: var(--chat-bg);
-    border-radius: 14px;
-    box-shadow: var(--shadow-chat);
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 32px);
-    overflow: hidden;
-}
-
-/* =====================
-   HEADER
-   ===================== */
-
-.contact.bar {
-    background: var(--header-bg);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.contact-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.contact-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #cfd3d8, #e4e6eb);
-}
-
-.contact-name {
-    font-weight: 600;
-}
-
-.contact-status {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* =====================
-   PAGINATION + SEARCH
-   ===================== */
-
-.pagination {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-}
-
-.pagination button {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-}
-
-#search {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    margin: 8px 0;
-}
-
-/* =====================
-   MESSAGES CONTAINER
-   ===================== */
-
-.messages {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-/* =====================
-   DAY SEPARATOR
-   ===================== */
-
-.time {
-    align-self: center;
-    background: var(--time-bg);
-    color: var(--time-text);
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    margin: 12px 0;
-}
-
-/* =====================
-   MESSAGE BUBBLES
+   HOVER MENU
    ===================== */
 
 .message {
-    display: inline-block;
-    align-self: flex-start; /* ⬅️ КЛЮЧЕВО: НЕ stretch */
-
-    min-width: 60px;
-    max-width: 420px;
-
-    padding: 10px 14px;
-    line-height: 1.45;
-
-    background: var(--bubble-other);
-    color: var(--text-main);
-    box-shadow: var(--shadow-bubble);
-
-    word-wrap: break-word;
-    overflow-wrap: anywhere;
+    position: relative;
 }
 
-/* Self messages */
-.message.self {
-    align-self: flex-end;
-    background: var(--bubble-self);
-    color: var(--bubble-self-text);
-    box-shadow: var(--shadow-bubble-self);
+.hover-menu {
+    position: absolute;
+    top: 6px;
+    right: -56px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
-/* =====================
-   GROUPED SHAPES
-   ===================== */
-
-/* Other */
-.message.start {
-    border-radius: 18px 18px 18px 6px;
+.message:hover .hover-menu {
+    opacity: 1;
 }
 
-.message.middle {
-    border-radius: 18px 6px 18px 6px;
-}
-
-.message.end {
-    border-radius: 18px 6px 6px 18px;
-}
-
-/* Self */
-.message.self.start {
-    border-radius: 18px 18px 6px 18px;
-}
-
-.message.self.middle {
-    border-radius: 6px 18px 6px 18px;
-}
-
-.message.self.end {
-    border-radius: 6px 18px 18px 18px;
-}
-
-/* =====================
-   META
-   ===================== */
-
-.message-meta {
+.hover-time {
     font-size: 11px;
     color: var(--text-muted);
-    margin-bottom: 4px;
 }
 
-/* =====================
-   MOBILE
-   ===================== */
-
-@media (max-width: 768px) {
-    .message {
-        max-width: 100%;
-    }
+.copy-btn {
+    border: none;
+    background: var(--time-bg);
+    border-radius: 6px;
+    padding: 2px 6px;
+    cursor: pointer;
 }
